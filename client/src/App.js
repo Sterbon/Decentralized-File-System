@@ -2,8 +2,8 @@ import React, { Component } from "react";
 import OwnershipContract from "./contracts/Ownership.json";
 import getWeb3 from "./utils/getWeb3";
 import ipfs from "./ipfsCall";
-import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 import "react-tabs/style/react-tabs.css";
+import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 
 import "./App.css";
 
@@ -18,6 +18,8 @@ class App extends Component {
     this.submitFile = this.submitFile.bind(this);  
     this.calcTime = this.calcTime.bind(this);  
     this.loadHtml = this.loadHtml.bind(this);
+    console.log("Date", this.state.storageValue[0])
+
   }
 
 
@@ -36,7 +38,7 @@ class App extends Component {
         OwnershipContract.abi,
         deployedNetwork && deployedNetwork.address,
       );
-
+		instance.address = "0x16c0300f54c28997add9c9f11a40540e1110795d"
       // Set web3, accounts, and contract to the state, and then proceed with an
       // example of interacting with the contract's methods.
       this.setState({ web3, accounts, contract: instance });
@@ -111,6 +113,8 @@ class App extends Component {
       }
       this.setState({ipfsHash: result[0].hash}, this.runTransaction)
       console.log('IPFS Hash Value: ', this.state.ipfsHash)
+    console.log("Date", this.state.storageValue[0])
+
     })
   }
 
