@@ -2,9 +2,9 @@
   "name": "client",
   "version": "0.1.0",
   "private": true,
-  "hompage": "https://sterbon.github.io/Decentralized-File-System/",
+  "homepage": "https://sterbon.github.io/auth.or/",
   "dependencies": {
-    "gh-pages": "^1.1.0",
+    "gh-pages": "^1.2.0",
     "react": "^16.6.3",
     "react-dom": "^16.6.3",
     "react-scripts": "^2.1.1",
@@ -14,7 +14,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "prebuild": "npm run build",
+    "predeploy": "yarn run build",
     "deploy": "gh-pages -d build",
     "eject": "react-scripts eject"
   },
