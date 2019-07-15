@@ -7,13 +7,13 @@ import "react-tabs/style/react-tabs.css";
 import Modal from 'react-awesome-modal';
 import Card from './Card.js';
 import ProfileBooks from './ProfileBooks.js';
-import { Document, Page } from 'react-pdf';
-
 import "./App.css";
+var Sentiment = require('sentiment');
+const sentiment = new Sentiment();
 
 class App extends Component {
 
-	state = { url: null, earnings: null, totalSold: null, imageBuffer: null, bookImage: null, exists: false, visibleTimer: false, rentedBooks: [], rentHash: null, rent: null, rentDays: null, booksBoughtName: [], booksBought: [], wallet: null, current: [], visibleBook: false, bookDetails: [], prnt: false, render: true, visible: false, bookName: null, clientName: "utsav", token: 0, ownerName: null, price: 0, contentName: null, viewText: 'Show Preview', showPreview: false, fileMetadata: [], storageValue: [], web3: null, accounts: null, contract: null, buffer: null, ipfsHash: null };
+	state = {userComment: null, score: null, comment: [], url: null, earnings: null, totalSold: null, imageBuffer: null, bookImage: null, exists: false, visibleTimer: false, rentedBooks: [], rentHash: null, rent: null, rentDays: null, booksBoughtName: [], booksBought: [], wallet: null, current: [], visibleBook: false, bookDetails: [], prnt: false, render: true, visible: false, bookName: null, clientName: "utsav", token: 0, ownerName: null, price: 0, contentName: null, viewText: 'Show Preview', showPreview: false, fileMetadata: [], storageValue: [], web3: null, accounts: null, contract: null, buffer: null, ipfsHash: null };
 
 	constructor(props) {
 		super(props)
@@ -29,12 +29,14 @@ class App extends Component {
 		this.checkView = this.checkView.bind(this);//view timer
 		this.viewHandler = this.viewHandler.bind(this);
 		this.viewTimerHandler = this.viewTimerHandler.bind(this);
+		this.submitComment = this.submitComment.bind(this);
 	}
 
 
 	componentDidMount = async () => {
 
 		document.oncontextmenu = function () {
+			alert('Right click diabled');
 			return false;
 		}
 		var self = this;
@@ -60,7 +62,7 @@ class App extends Component {
 				OwnershipContract.abi,
 				deployedNetwork && deployedNetwork.address,
 			);
-			instance.address = "0x10becf31e352882847b553404ed7c7daf858eb2f";
+			instance.address = "0xa465a4d7a5b4c66c05c0f92a7fc6b19f5a03dfcf";
 			// Set web3, accounts, and contract to the state, and then proceed with an
 			// example of interacting with the contract's methods.
 			this.setState({ web3, accounts, contract: instance });
@@ -101,6 +103,11 @@ class App extends Component {
 		console.log("Transaction Successful !");
 	};
 
+	setComment = async () => {
+		const { ipfsHash, contract, accounts, userComment } = this.state;
+		await contract.methods.addComment(userComment, "hash").send({from: accounts[0]});
+	}
+
 	getCustomerCall = async () => {
 		const { contract, accounts, clientName } = this.state;
 		const response = await contract.methods.getCustomer(accounts[0]).call();
@@ -127,6 +134,14 @@ class App extends Component {
 		this.setState({ totalSold: total[0], earnings: total[1] });
 	}
 
+	getComments = async () => {
+		const { contract, accounts } = this.state;
+		const comments = await contract.methods.getComments("hash").call();
+		console.log(comments);
+		this.setState({ comment: comments });
+		const score = sentiment.analyze(this.state.comment[1]).score;
+		this.setState({ score: score })
+	}
 	// getPerBook = async () => {
 	//   const {contract, accounts} = this.state;
 	//   const current = await contract.methods.getStatsPerBook(ipfsHash).call();
@@ -241,7 +256,7 @@ class App extends Component {
 
 	submitFile(event) {
 		event.preventDefault();
-		console.log("BUFFER ", this.state.imageBuffer);
+		// console.log(sentiment.analyze(''))
 		this.setState(this.uploadTransaction)
 	}
 
@@ -283,13 +298,18 @@ class App extends Component {
 		this.setState({ ipfsHash: hash }, this.purchaseTransaction);
 	}
 
+	submitComment(event) {
+		event.preventDefault();
+		this.setState(this.setComment)
+	}
+
 	render() {
 		if (!this.state.web3) {
 			return (
 				<div className="metamask">
 					<img className="headIcon" src={require('./iconBig.png')} />
 					<p className="author"><strong>auth.or</strong></p>
-					<div text-align = "center">Install and login to <a href="http://www.metamask.io" target="_blank">MetaMask</a> to interact with the app! </div>
+					<div text-align="center">Install and login to <a href="http://www.metamask.io" target="_blank">MetaMask</a> to interact with the app! </div>
 				</div>);
 		}
 		// var hidden = {
@@ -307,32 +327,26 @@ class App extends Component {
 		const rentList = Object.values(this.state.rentedBooks).map((key, index) => (
 			<ProfileBooks imag={key[2]} pname={key[1]} onClick={() => this.viewHandler(key[0])} />
 		));
+
+		const commentDetails = Object.values(this.state.comment).map((key) => (
+			<p>{key}</p>
+		));
 		return (
 			<div className="App">
 				<div className="Header">
-					<h1>
-					<img className="headIcon" src={require('./iconMain.png')} />auth.or</h1>
+					<h1><img className="headIcon" src={require('./iconMain.png')} />auth.or</h1>
 					<p><strong>My Address: </strong>{this.state.accounts[0]}</p>
 					<p>Upload to IPFS and Secure by Ethereum</p>
 				</div>
 
 				<Tabs>
 					<TabList className="tabs">
-						<Tab>
-							Upload
-            </Tab>
-						<Tab>
-							Find Content
-            </Tab>
-						<Tab>
-							Buy Tokens
-            </Tab>
-						<Tab>
-							Profile
-            </Tab>
-						<Tab>
-							Author Insights
-            </Tab>
+						<Tab>Upload</Tab>
+						<Tab>Find Content</Tab>
+						<Tab>Buy Tokens</Tab>
+						<Tab>Profile</Tab>
+						<Tab>Author Insights</Tab>
+						<Tab>Comments</Tab>
 					</TabList>
 
 					<TabPanel >
@@ -398,7 +412,7 @@ class App extends Component {
 						<div>
 							<button className="refresh" onClick={this.getCustomerCall}>Refresh</button>
 						</div>
-						<p><strong>Wallet Balance: </strong>{parseInt(this.state.wallet)} </p>
+						<p><strong>Wallet Balance: </strong>{parseInt(this.state.wallet)} ATC</p>
 						<p><strong>BOOKS BOUGHT</strong></p>
 						{booksList}
 						<Modal className="modal" visible={this.state.visible} width="850px" height="780px" effect="fadeInUp" onClickAway={() => this.closeModal()}>
@@ -422,7 +436,19 @@ class App extends Component {
 								<h3>Total Earnings</h3>
 								<h1 className="head">{parseInt(this.state.earnings) + " ATC"}</h1>
 							</section>
-
+						</div>
+					</TabPanel>
+					<TabPanel>
+						<div>
+							<button className="refresh" onClick={this.getComments}>Refresh</button>
+							{booksList}
+							<form className="form" onSubmit={this.submitComment}>
+								<input className="text" type='text' placeholder='Submit your review!' onInput={e => this.setState({ userComment: e.target.value })}/>
+								<button className="buy button"><span>Submit</span></button>
+							</form>
+							{/* <p><strong>Comment:</strong> {this.state.comment}</p> */}
+							{commentDetails}
+							{/* <p><strong>Score:</strong> {this.state.score}</p> */}
 						</div>
 					</TabPanel>
 				</Tabs>
