@@ -8,15 +8,20 @@ import Modal from 'react-awesome-modal';
 import Card from './Card.js';
 import ProfileBooks from './ProfileBooks.js';
 import "./App.css";
+import Slider from "react-slick";
+import "slick-carousel/slick/slick.css"; 
+import "slick-carousel/slick/slick-theme.css";
+
 var Sentiment = require('sentiment');
 const sentiment = new Sentiment();
 
 class App extends Component {
 
-	state = {userComment: null, score: null, comment: [], url: null, earnings: null, totalSold: null, imageBuffer: null, bookImage: null, exists: false, visibleTimer: false, rentedBooks: [], rentHash: null, rent: null, rentDays: null, booksBoughtName: [], booksBought: [], wallet: null, current: [], visibleBook: false, bookDetails: [], prnt: false, render: true, visible: false, bookName: null, clientName: "utsav", token: 0, ownerName: null, price: 0, contentName: null, viewText: 'Show Preview', showPreview: false, fileMetadata: [], storageValue: [], web3: null, accounts: null, contract: null, buffer: null, ipfsHash: null };
+	state = { currentBook: null, commentHash: null, userComment: null, comment: [], url: null, earnings: null, totalSold: null, imageBuffer: null, bookImage: null, exists: false, visibleTimer: false, rentedBooks: [], rentHash: null, rent: null, rentDays: null, booksBoughtName: [], booksBought: [], wallet: null, current: [], visibleBook: false, bookDetails: [], prnt: false, render: true, visible: false, bookName: null, clientName: "utsav", token: 0, ownerName: null, price: 0, contentName: null, viewText: 'Show Preview', showPreview: false, fileMetadata: [], storageValue: [], web3: null, accounts: null, contract: null, buffer: null, ipfsHash: null };
 
 	constructor(props) {
 		super(props)
+
 
 		this.getFile = this.getFile.bind(this);
 		this.getImage = this.getImage.bind(this);
@@ -62,7 +67,7 @@ class App extends Component {
 				OwnershipContract.abi,
 				deployedNetwork && deployedNetwork.address,
 			);
-			instance.address = "0xa465a4d7a5b4c66c05c0f92a7fc6b19f5a03dfcf";
+			instance.address = "0xfebf77ef27d235bbd2c78a999f090123c4c23e66";
 			// Set web3, accounts, and contract to the state, and then proceed with an
 			// example of interacting with the contract's methods.
 			this.setState({ web3, accounts, contract: instance });
@@ -84,12 +89,9 @@ class App extends Component {
 
 	uploadTransaction = async () => {
 		const { accounts, contract, ipfsHash, contentName, ownerName, price, rent, rentDays, bookImage } = this.state;
-
 		await contract.methods.uploadContent(ipfsHash, contentName, ownerName, price, rent, rentDays, bookImage).send({ from: accounts[0] });
-
 		console.log("storage Value: ", this.state.storageValue);
 	};
-
 
 	buyTokenTransaction = async () => {
 		const { contract, accounts, clientName, token } = this.state
@@ -104,8 +106,13 @@ class App extends Component {
 	};
 
 	setComment = async () => {
-		const { ipfsHash, contract, accounts, userComment } = this.state;
-		await contract.methods.addComment(userComment, "hash").send({from: accounts[0]});
+		const { contract, accounts, userComment, commentHash} = this.state;
+		const score = sentiment.analyze(userComment).score;
+		let negative = false;
+		if(score<0)
+			negative = true;
+		console.log(score)
+		await contract.methods.addComment(userComment, commentHash, Math.abs(score), negative).send({from: accounts[0]});
 	}
 
 	getCustomerCall = async () => {
@@ -127,6 +134,14 @@ class App extends Component {
 		await contract.methods.rentTransaction(rentHash).send({ from: accounts[0] });
 	};
 
+	// searchName
+	getBookName = async () => {
+		const { contract, commentHash } = this.state;
+		const response = await contract.methods.searchName(commentHash).call();
+		this.setState({ current: response });
+		console.log("book name: ", this.state.current);
+	};
+
 	getTotal = async () => {
 		const { contract, accounts } = this.state;
 		const total = await contract.methods.getUploads(accounts[0]).call();
@@ -134,20 +149,12 @@ class App extends Component {
 		this.setState({ totalSold: total[0], earnings: total[1] });
 	}
 
-	getComments = async () => {
-		const { contract, accounts } = this.state;
-		const comments = await contract.methods.getComments("hash").call();
+	getComments = async (commentHash) => {
+		const { contract, accounts} = this.state;
+		const comments = await contract.methods.getComments(commentHash).call();
 		console.log(comments);
 		this.setState({ comment: comments });
-		const score = sentiment.analyze(this.state.comment[1]).score;
-		this.setState({ score: score })
 	}
-	// getPerBook = async () => {
-	//   const {contract, accounts} = this.state;
-	//   const current = await contract.methods.getStatsPerBook(ipfsHash).call();
-	//   console.log(current);
-	//   this.setState({currentTotal: current});
-	// }
 
 	loadHtml() {
 		return (`https://ipfs.io/ipfs/${this.state.ipfsHash}#toolbar=0`);
@@ -172,16 +179,15 @@ class App extends Component {
 		}
 	}
 
-	openViewModal(hash) {
+	openViewModal() {
 		if (this.state.render) {
 			this.setState({
-				visibleTimer: true,
-				ipfsHash: hash
+				visibleTimer: true
 			});
-			setTimeout(
-				function () {
-					this.setState({ render: false });
-				}.bind(this), 10000);
+			// setTimeout(
+			// 	function () {
+			// 		this.setState({ render: false });
+			// 	}.bind(this), 10000);
 		}
 	}
 
@@ -194,9 +200,12 @@ class App extends Component {
 
 	closeModal() {
 		this.setState({
-			visible: false
+			visible: false,
+			// visibleBook: false
 		});
 	}
+
+	
 
 	getFile(event) {
 		event.preventDefault()
@@ -279,14 +288,21 @@ class App extends Component {
 		this.setState(this.buyTokenTransaction);
 	}
 
-	viewTimerHandler(value) {
-		console.log(value);
-		this.openViewModal(value);
+	viewTimerHandler() {
+		this.openViewModal();
 	}
 
 	viewHandler(value) {
 		console.log(value);
 		this.openModal(value);
+	}
+
+	bookHandler(value, name) {
+		console.log(name);
+		this.viewTimerHandler();
+		this.setState({commentHash: name})
+		this.setState({currentBook: value})
+		this.getComments(name);
 	}
 
 	rentHandler(hash) {
@@ -298,7 +314,7 @@ class App extends Component {
 		this.setState({ ipfsHash: hash }, this.purchaseTransaction);
 	}
 
-	submitComment(event) {
+	submitComment (event) {
 		event.preventDefault();
 		this.setState(this.setComment)
 	}
@@ -315,9 +331,42 @@ class App extends Component {
 		// var hidden = {
 		// 	display: this.state.shown ? "block" : "none"
 		// }
-
+		var settings = {
+			dots: true,
+			infinite: false,
+			speed: 500,
+			slidesToShow: 4,
+			slidesToScroll: 4,
+			initialSlide: 0,
+			responsive: [
+			  {
+				breakpoint: 1024,
+				settings: {
+				  slidesToShow: 3,
+				  slidesToScroll: 3,
+				  infinite: true,
+				  dots: true
+				}
+			  },
+			  {
+				breakpoint: 600,
+				settings: {
+				  slidesToShow: 2,
+				  slidesToScroll: 2,
+				  initialSlide: 2
+				}
+			  },
+			  {
+				breakpoint: 480,
+				settings: {
+				  slidesToShow: 1,
+				  slidesToScroll: 1
+				}
+			  }
+			]
+		  };
 		const coins = Object.values(this.state.bookDetails).map((key, index) => (
-			<Card days={key[6]} rentPrice={key[5]} imag={key[4]} pname={key[0]} author={key[1]} price={key[2]} rentClick={() => this.rentHandler(key[3])} buyClick={() => this.buyHandler(key[3])} />
+			<Card onClick={() => this.bookHandler(key[1], key[3])} days={key[6]} rentPrice={key[5]} imag={key[4]} pname={key[0]} author={key[1]} price={key[2]} rentClick={() => this.rentHandler(key[3])} buyClick={() => this.buyHandler(key[3])} />
 		));
 
 		const booksList = Object.values(this.state.booksBought).map((key, index) => (
@@ -328,9 +377,22 @@ class App extends Component {
 			<ProfileBooks imag={key[2]} pname={key[1]} onClick={() => this.viewHandler(key[0])} />
 		));
 
-		const commentDetails = Object.values(this.state.comment).map((key) => (
-			<p>{key}</p>
+		const bookComment = Object.values(this.state.booksBought).map((key, index) => (
+			<ProfileBooks imag={key[2]} pname={key[1]} onClick={() => this.bookHandler(key[1],key[0])} />
 		));
+
+		const commentDetails = Object.values(this.state.comment).map((key) => (
+			<p>{key[0]}</p>
+		));
+		
+		let total = 0;
+		var isNegative = false;
+		const commentSentiment = Object.values(this.state.comment).map((key) => (
+			isNegative = (key[2] == 'true'),
+			total = isNegative ? total - parseInt(key[1]) : total + parseInt(key[1])
+			// console.log(total)
+		));
+
 		return (
 			<div className="App">
 				<div className="Header">
@@ -389,12 +451,18 @@ class App extends Component {
 							<button className="refresh" onClick={this.getAll}>Refresh</button>
 						</div>
 						<div className="coins">
-							{coins}
+								{coins}
 						</div>
-						<Modal className="modal" visible={this.state.visible} width="850px" height="780px" effect="fadeInUp" onClickAway={() => this.closeModal()}>
-							<p><strong>{} </strong></p>
-							<iframe className="preview" src={this.loadHtml()} ></iframe>
+						<Modal className="modal" visible={this.state.visibleTimer} width="500px" height="680px" effect="fadeInUp" onClickAway={() => this.closeViewModal()}>
+								<form onSubmit={this.submitComment}>
+									<p><strong>Book Name: </strong>{this.state.currentBook}</p>
+									<p>{commentDetails}</p>
+									<p>{total}</p>
+									<input className="text" type='text' placeholder='Submit your review!' onInput={e => this.setState({ userComment: e.target.value })}/>
+									<button className="buy button"><span>Submit</span></button>
+								</form>
 						</Modal>
+
 					</TabPanel>
 
 					<TabPanel className="tab">
@@ -414,41 +482,53 @@ class App extends Component {
 						</div>
 						<p><strong>Wallet Balance: </strong>{parseInt(this.state.wallet)} ATC</p>
 						<p><strong>BOOKS BOUGHT</strong></p>
-						{booksList}
+							{booksList}
+						
+						<p className="rentLabel"><strong>BOOKS RENTED</strong></p>
+							{rentList}
+
 						<Modal className="modal" visible={this.state.visible} width="850px" height="780px" effect="fadeInUp" onClickAway={() => this.closeModal()}>
 							<p><strong>{} </strong></p>
 							<iframe className="preview" src={this.loadHtml()} ></iframe>
 						</Modal>
 
-						<p className="rentLabel"><strong>BOOKS RENTED</strong></p>
-						{rentList}
 					</TabPanel>
 					<TabPanel className="insights">
 						<div>
 							<div>
 								<button className="refresh" onClick={this.getTotal}>Refresh</button>
 							</div>
-							<section>
-								<h3>Total Books Sold / Rented</h3>
-								<h1 className="head">{parseInt(this.state.totalSold)}</h1>
-							</section>
-							<section>
-								<h3>Total Earnings</h3>
-								<h1 className="head">{parseInt(this.state.earnings) + " ATC"}</h1>
-							</section>
+							<div className="section-div">
+								<section>
+									<h3>Total Books Sold / Rented</h3>
+									<h1 className="head">{parseInt(this.state.totalSold)}</h1>
+								</section>
+								<section>
+									<h3>Total Earnings</h3>
+									<h1 className="head">{parseInt(this.state.earnings) + " ATC"}</h1>
+								</section>
+								<section>
+									<h3>Author Rating</h3>
+									<h1 className="head">{total}</h1>
+								</section>
+							</div>
 						</div>
 					</TabPanel>
 					<TabPanel>
 						<div>
-							<button className="refresh" onClick={this.getComments}>Refresh</button>
-							{booksList}
-							<form className="form" onSubmit={this.submitComment}>
-								<input className="text" type='text' placeholder='Submit your review!' onInput={e => this.setState({ userComment: e.target.value })}/>
-								<button className="buy button"><span>Submit</span></button>
-							</form>
-							{/* <p><strong>Comment:</strong> {this.state.comment}</p> */}
-							{commentDetails}
-							{/* <p><strong>Score:</strong> {this.state.score}</p> */}
+							<button className="refresh" onClick={this.getCustomerCall}>Refresh</button>
+							<div>
+								<Slider {...settings} >
+									{bookComment}
+								</Slider>
+							</div>
+							<div>
+								<form className="form" onSubmit={this.submitComment}>
+									<p><strong>Book Name: </strong>{this.state.currentBook}</p>
+									<input className="text" type='text' placeholder='Submit your review!' onInput={e => this.setState({ userComment: e.target.value })}/>
+									<button className="buy button"><span>Submit</span></button>
+								</form>
+							</div>
 						</div>
 					</TabPanel>
 				</Tabs>

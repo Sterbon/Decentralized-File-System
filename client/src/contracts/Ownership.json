@@ -11,6 +11,14 @@
         {
           "name": "ipfsHash",
           "type": "string"
+        },
+        {
+          "name": "sentiment",
+          "type": "uint256"
+        },
+        {
+          "name": "negative",
+          "type": "bool"
         }
       ],
       "name": "addComment",
@@ -322,7 +330,7 @@
       "outputs": [
         {
           "name": "comment",
-          "type": "string[]"
+          "type": "string[][]"
         }
       ],
       "payable": false,

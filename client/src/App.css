@@ -70,7 +70,7 @@ label {
   color: rgba(36, 36, 187, 0.479);
   text-underline-position: below;
 }
-
+ 
 .form {
   display: flex;
   /* align-items: center; */
@@ -126,6 +126,11 @@ input[type=file] {
 
 .head {
   font-size: 32px;
+}
+
+.section-div {
+  margin-top: 60px;
+  display: flex;
 }
 
 section {

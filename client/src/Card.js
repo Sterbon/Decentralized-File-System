@@ -7,7 +7,7 @@ class Card extends Component {
         return (
           
             <React.Fragment>
-                <div className="card" >
+                <div className="card" onClick={this.props.onClick} >
                     
                     <img className="image" alt="product" src={`https://ipfs.io/ipfs/${this.props.imag}`} align="middle"></img>
                     <div className="p-des">
