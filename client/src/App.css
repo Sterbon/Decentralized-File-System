@@ -33,13 +33,10 @@
   font-family: 'Russo One', sans-serif;
 }
 
-.rentLabel {
-  margin-top: 400px;
-}
-
 .text {
   color: #555f61;
-  width: 100%;
+  width: 90%;
+  align-content: flex-start;
   height: 36px;
   box-sizing: border-box;
   border: 1.5px solid #ccc;
@@ -131,6 +128,30 @@ input[type=file] {
 .section-div {
   margin-top: 60px;
   display: flex;
+}
+
+.comments {
+  margin: 50px;
+  display: inline-flexbox;
+  overflow-y: auto;
+  max-height: 400px;
+  height: 300px;
+  scroll-behavior: smooth;
+  font-style: italic;
+  width: auto
+}
+
+.totalScore {
+  color: rgb(230, 131, 65);
+  height: 30px;
+  width: 30px;
+  font-size: 24px;
+  padding: 8px;
+  background-color: #bbb;
+  border-radius: 50%;
+  display: inline-table;
+  text-align: center;
+  font-weight: bold;
 }
 
 section {

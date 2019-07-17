@@ -15,13 +15,16 @@ import "slick-carousel/slick/slick-theme.css";
 var Sentiment = require('sentiment');
 const sentiment = new Sentiment();
 
+// const fs = require('fs');
+// const PDFDocument = require('pdfkit');
+// const doc = new PDFDocument();
+
 class App extends Component {
 
 	state = { currentBook: null, commentHash: null, userComment: null, comment: [], url: null, earnings: null, totalSold: null, imageBuffer: null, bookImage: null, exists: false, visibleTimer: false, rentedBooks: [], rentHash: null, rent: null, rentDays: null, booksBoughtName: [], booksBought: [], wallet: null, current: [], visibleBook: false, bookDetails: [], prnt: false, render: true, visible: false, bookName: null, clientName: "utsav", token: 0, ownerName: null, price: 0, contentName: null, viewText: 'Show Preview', showPreview: false, fileMetadata: [], storageValue: [], web3: null, accounts: null, contract: null, buffer: null, ipfsHash: null };
 
 	constructor(props) {
 		super(props)
-
 
 		this.getFile = this.getFile.bind(this);
 		this.getImage = this.getImage.bind(this);
@@ -37,7 +40,6 @@ class App extends Component {
 		this.submitComment = this.submitComment.bind(this);
 	}
 
-
 	componentDidMount = async () => {
 
 		document.oncontextmenu = function () {
@@ -51,8 +53,12 @@ class App extends Component {
 				console.log("pressed!")
 			}
 		});
-		setInterval(() => this.checkView(), 1000);//view timer
 
+		setInterval(() => this.getAll(), 1000)
+		setInterval(() => this.getCustomerCall(), 1000)
+		setInterval(() => this.getTotal(), 1000)
+
+		
 		try {
 			// Get network provider and web3 instance.
 			const web3 = await getWeb3();
@@ -67,7 +73,7 @@ class App extends Component {
 				OwnershipContract.abi,
 				deployedNetwork && deployedNetwork.address,
 			);
-			instance.address = "0xfebf77ef27d235bbd2c78a999f090123c4c23e66";
+			instance.address = "0xaeee9f4da8c8dd8f8a6c4f204a6d41c215500562";
 			// Set web3, accounts, and contract to the state, and then proceed with an
 			// example of interacting with the contract's methods.
 			this.setState({ web3, accounts, contract: instance });
@@ -119,14 +125,12 @@ class App extends Component {
 		const { contract, accounts, clientName } = this.state;
 		const response = await contract.methods.getCustomer(accounts[0]).call();
 		this.setState({ wallet: response[0]._hex, booksBought: response[1], rentedBooks: response[2] });
-		console.log("Books Bought : ", response);
 	};
 
 	getAll = async () => {
 		const { contract } = this.state;
 		const response = await contract.methods.getAllBooks().call();
 		this.setState({ bookDetails: response });
-		console.log("books: ", this.state.bookDetails);
 	};
 
 	rentTranact = async () => {
@@ -145,21 +149,24 @@ class App extends Component {
 	getTotal = async () => {
 		const { contract, accounts } = this.state;
 		const total = await contract.methods.getUploads(accounts[0]).call();
-		console.log(total);
 		this.setState({ totalSold: total[0], earnings: total[1] });
 	}
 
 	getComments = async (commentHash) => {
 		const { contract, accounts} = this.state;
 		const comments = await contract.methods.getComments(commentHash).call();
-		console.log(comments);
 		this.setState({ comment: comments });
 	}
 
 	loadHtml() {
-		return (`https://ipfs.io/ipfs/${this.state.ipfsHash}#toolbar=0`);
-		// return (`https://wix.com`);
-	}
+		console.log("tes1", )
+		ipfs.files.cat(this.state.ipfsHash, (err, data) => {
+			if(err) return console.error(err);
+			console.log("Test", data)
+		});
+		
+		// return (`https://ipfs.io/ipfs/${this.state.ipfsHash}#toolbar=0`);
+	}	
 
 	openModal(hash) {
 		if (this.state.render) {
@@ -295,6 +302,7 @@ class App extends Component {
 	viewHandler(value) {
 		console.log(value);
 		this.openModal(value);
+		this.loadHtml();
 	}
 
 	bookHandler(value, name) {
@@ -319,6 +327,12 @@ class App extends Component {
 		this.setState(this.setComment)
 	}
 
+	substr(str) {
+		var start = str.slice(38,42);
+		var end = str.slice(0,4);
+		return(start + "..." + end);
+	}
+
 	render() {
 		if (!this.state.web3) {
 			return (
@@ -331,11 +345,12 @@ class App extends Component {
 		// var hidden = {
 		// 	display: this.state.shown ? "block" : "none"
 		// }
+
 		var settings = {
 			dots: true,
 			infinite: false,
 			speed: 500,
-			slidesToShow: 4,
+			slidesToShow: 5,
 			slidesToScroll: 4,
 			initialSlide: 0,
 			responsive: [
@@ -364,7 +379,8 @@ class App extends Component {
 				}
 			  }
 			]
-		  };
+		};
+		
 		const coins = Object.values(this.state.bookDetails).map((key, index) => (
 			<Card onClick={() => this.bookHandler(key[1], key[3])} days={key[6]} rentPrice={key[5]} imag={key[4]} pname={key[0]} author={key[1]} price={key[2]} rentClick={() => this.rentHandler(key[3])} buyClick={() => this.buyHandler(key[3])} />
 		));
@@ -381,16 +397,15 @@ class App extends Component {
 			<ProfileBooks imag={key[2]} pname={key[1]} onClick={() => this.bookHandler(key[1],key[0])} />
 		));
 
-		const commentDetails = Object.values(this.state.comment).map((key) => (
-			<p>{key[0]}</p>
+		const commentDetails = Object.values(this.state.comment).map((key, index) => (
+			<p>{key[0]} <img width="15px" height="15px" src={require('./utils/tick.png')}/><hr/></p> 
 		));
 		
 		let total = 0;
 		var isNegative = false;
-		const commentSentiment = Object.values(this.state.comment).map((key) => (
+		Object.values(this.state.comment).map((key) => (
 			isNegative = (key[2] == 'true'),
 			total = isNegative ? total - parseInt(key[1]) : total + parseInt(key[1])
-			// console.log(total)
 		));
 
 		return (
@@ -403,13 +418,32 @@ class App extends Component {
 
 				<Tabs>
 					<TabList className="tabs">
-						<Tab>Upload</Tab>
 						<Tab>Find Content</Tab>
+						<Tab>Upload</Tab>
 						<Tab>Buy Tokens</Tab>
 						<Tab>Profile</Tab>
 						<Tab>Author Insights</Tab>
 						<Tab>Comments</Tab>
 					</TabList>
+
+					<TabPanel >
+						<div>
+							{/* <button className="refresh" onClick={this.getAll}>Refresh</button> */}
+						</div>
+						<div className="coins">
+								{coins}
+						</div>
+						<Modal className="modal" visible={this.state.visibleTimer} width="500px" height="680px" effect="fadeInUp" onClickAway={() => this.closeViewModal()}>
+								<form onSubmit={this.submitComment}>
+									<p><strong>Book Name: </strong>{this.state.currentBook}</p>
+									<p className="totalScore">{total}</p>
+									<p className="comments">{commentDetails}</p>
+									<input className="text" type='text' placeholder='Submit your review!' onInput={e => this.setState({ userComment: e.target.value })}/>
+									<button className="buy button"><span>Submit</span></button>
+								</form>
+						</Modal>
+
+					</TabPanel>
 
 					<TabPanel >
 
@@ -439,28 +473,8 @@ class App extends Component {
 						</form>
 
 						<Modal className="modal" visible={this.state.visible} width="850px" height="780px" effect="fadeInUp" onClickAway={() => this.closeModal()}>
-							<p><strong>{} </strong></p>
-							<iframe className="preview" src={this.loadHtml()} ></iframe>
+							{/* <iframe className="preview" src={this.loadHtml()} ></iframe> */}
 
-						</Modal>
-
-					</TabPanel>
-
-					<TabPanel >
-						<div>
-							<button className="refresh" onClick={this.getAll}>Refresh</button>
-						</div>
-						<div className="coins">
-								{coins}
-						</div>
-						<Modal className="modal" visible={this.state.visibleTimer} width="500px" height="680px" effect="fadeInUp" onClickAway={() => this.closeViewModal()}>
-								<form onSubmit={this.submitComment}>
-									<p><strong>Book Name: </strong>{this.state.currentBook}</p>
-									<p>{commentDetails}</p>
-									<p>{total}</p>
-									<input className="text" type='text' placeholder='Submit your review!' onInput={e => this.setState({ userComment: e.target.value })}/>
-									<button className="buy button"><span>Submit</span></button>
-								</form>
 						</Modal>
 
 					</TabPanel>
@@ -478,25 +492,32 @@ class App extends Component {
 					<TabPanel>
 						<h3>Profile</h3>
 						<div>
-							<button className="refresh" onClick={this.getCustomerCall}>Refresh</button>
+							{/* <button className="refresh" onClick={this.getCustomerCall}>Refresh</button> */}
 						</div>
 						<p><strong>Wallet Balance: </strong>{parseInt(this.state.wallet)} ATC</p>
 						<p><strong>BOOKS BOUGHT</strong></p>
+						<Slider {...settings} >
 							{booksList}
-						
-						<p className="rentLabel"><strong>BOOKS RENTED</strong></p>
-							{rentList}
+						</Slider>
 
+						<br></br>
+						<p><strong>BOOKS RENTED</strong></p>
+						<Slider {...settings} >
+							{rentList}
+						</Slider>
 						<Modal className="modal" visible={this.state.visible} width="850px" height="780px" effect="fadeInUp" onClickAway={() => this.closeModal()}>
 							<p><strong>{} </strong></p>
-							<iframe className="preview" src={this.loadHtml()} ></iframe>
+							{/* <button onClick={() => this.loadHtml()}><strong>click me</strong></button> */}
+
+							{/* <iframe className="preview" src={this.loadHtml()} ></iframe> */}
 						</Modal>
 
 					</TabPanel>
+
 					<TabPanel className="insights">
 						<div>
 							<div>
-								<button className="refresh" onClick={this.getTotal}>Refresh</button>
+								{/* <button className="refresh" onClick={this.getTotal}>Refresh</button> */}
 							</div>
 							<div className="section-div">
 								<section>
@@ -507,16 +528,16 @@ class App extends Component {
 									<h3>Total Earnings</h3>
 									<h1 className="head">{parseInt(this.state.earnings) + " ATC"}</h1>
 								</section>
-								<section>
+								{/* <section>
 									<h3>Author Rating</h3>
 									<h1 className="head">{total}</h1>
-								</section>
+								</section> */}
 							</div>
 						</div>
 					</TabPanel>
 					<TabPanel>
 						<div>
-							<button className="refresh" onClick={this.getCustomerCall}>Refresh</button>
+							{/* <button className="refresh" onClick={this.getCustomerCall}>Refresh</button> */}
 							<div>
 								<Slider {...settings} >
 									{bookComment}

@@ -7,9 +7,9 @@ class Card extends Component {
         return (
           
             <React.Fragment>
-                <div className="card" onClick={this.props.onClick} >
-                    
-                    <img className="image" alt="product" src={`https://ipfs.io/ipfs/${this.props.imag}`} align="middle"></img>
+                <div className="card" >
+                        <img className="image" alt="product" src={`https://ipfs.io/ipfs/${this.props.imag}`} align="middle"/>
+                        <img className="review" onClick={this.props.onClick} src={require('./utils/review.png')} />    
                     <div className="p-des">
                         <p><strong>Book Name : </strong>{this.props.author}</p>
                         {/* <div></div> */}
@@ -20,16 +20,14 @@ class Card extends Component {
                         <p><strong>Rent Price : </strong>{this.props.rentPrice}</p>
                         {/* <div></div> */}
                         <p><strong>Rent Duration : </strong>{this.props.days}</p>
-
                         <div className="button-grp">
                             <button onClick={this.props.buyClick}>Buy</button>
                             <button onClick={this.props.rentClick}>Rent</button>
                         </div>
-                        {/* <button onClick={this.props.viewClick}>View</button> */}
-                    </div>
+
+                        </div>
 
                 </div>
-                
             </React.Fragment>
         );
     }
