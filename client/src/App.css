@@ -18,11 +18,20 @@
   justify-content: center;
   font-size: calc(10px + 2vmin);
   color: white;
+  background-image: './utils/tick.png';
   font-family: 'Russo One', sans-serif;
 }
 
 .App-link {
   color: #61dafb;
+}
+
+.Header_title {
+  position: relative;
+  bottom: 10px;
+  right: 0px;
+  left: 600px;
+  z-index: 1;
 }
 
 .preview {
@@ -141,8 +150,8 @@ input[type=file] {
   width: auto
 }
 
-.totalScore {
-  color: rgb(230, 131, 65);
+.totalNegative {
+  color: rgb(255, 60, 0);
   height: 30px;
   width: 30px;
   font-size: 24px;
@@ -152,6 +161,20 @@ input[type=file] {
   display: inline-table;
   text-align: center;
   font-weight: bold;
+}
+
+.totalPositive {
+  color: rgb(30, 121, 50);
+  height: 30px;
+  width: 30px;
+  font-size: 24px;
+  padding: 8px;
+  background-color: #bbb;
+  border-radius: 50%;
+  display: inline-table;
+  text-align: center;
+  font-weight: bold;
+  margin-right:50px 
 }
 
 section {

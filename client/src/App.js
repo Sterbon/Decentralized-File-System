@@ -11,17 +11,17 @@ import "./App.css";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css"; 
 import "slick-carousel/slick/slick-theme.css";
+import 'react-sticky-header/styles.css';
+import StickyHeader from 'react-sticky-header';
 
 var Sentiment = require('sentiment');
 const sentiment = new Sentiment();
 
-// const fs = require('fs');
-// const PDFDocument = require('pdfkit');
-// const doc = new PDFDocument();
+const vader = require('vader-sentiment');
 
 class App extends Component {
 
-	state = { currentBook: null, commentHash: null, userComment: null, comment: [], url: null, earnings: null, totalSold: null, imageBuffer: null, bookImage: null, exists: false, visibleTimer: false, rentedBooks: [], rentHash: null, rent: null, rentDays: null, booksBoughtName: [], booksBought: [], wallet: null, current: [], visibleBook: false, bookDetails: [], prnt: false, render: true, visible: false, bookName: null, clientName: "utsav", token: 0, ownerName: null, price: 0, contentName: null, viewText: 'Show Preview', showPreview: false, fileMetadata: [], storageValue: [], web3: null, accounts: null, contract: null, buffer: null, ipfsHash: null };
+	state = { score: [], currentBook: null, commentHash: null, userComment: null, comment: [], url: null, earnings: null, totalSold: null, imageBuffer: null, bookImage: null, exists: false, visibleTimer: false, rentedBooks: [], rentHash: null, rent: null, rentDays: null, booksBoughtName: [], booksBought: [], wallet: null, current: [], visibleBook: false, bookDetails: [], prnt: false, render: true, visible: false, bookName: null, clientName: "utsav", token: 0, ownerName: null, price: 0, contentName: null, viewText: 'Show Preview', showPreview: false, fileMetadata: [], storageValue: [], web3: null, accounts: null, contract: null, buffer: null, ipfsHash: null };
 
 	constructor(props) {
 		super(props)
@@ -46,6 +46,13 @@ class App extends Component {
 			alert('Right click diabled');
 			return false;
 		}
+
+		document.body.style.overflowX = 'hidden';
+
+		setInterval(() => this.getAll(), 400)
+		setInterval(() => this.getCustomerCall(), 400)
+		setInterval(() => this.getTotal(), 400)
+
 		var self = this;
 		window.addEventListener("keyup", function (e) {
 			if (e.keyCode == 44) {
@@ -53,11 +60,6 @@ class App extends Component {
 				console.log("pressed!")
 			}
 		});
-
-		setInterval(() => this.getAll(), 1000)
-		setInterval(() => this.getCustomerCall(), 1000)
-		setInterval(() => this.getTotal(), 1000)
-
 		
 		try {
 			// Get network provider and web3 instance.
@@ -73,7 +75,7 @@ class App extends Component {
 				OwnershipContract.abi,
 				deployedNetwork && deployedNetwork.address,
 			);
-			instance.address = "0xaeee9f4da8c8dd8f8a6c4f204a6d41c215500562";
+			instance.address = "0x12e59fe304c7456eb904090428556b4650d6fb1c";
 			// Set web3, accounts, and contract to the state, and then proceed with an
 			// example of interacting with the contract's methods.
 			this.setState({ web3, accounts, contract: instance });
@@ -113,12 +115,13 @@ class App extends Component {
 
 	setComment = async () => {
 		const { contract, accounts, userComment, commentHash} = this.state;
-		const score = sentiment.analyze(userComment).score;
+		// const score = sentiment.analyze(userComment).score;
+		const score = parseInt(vader.SentimentIntensityAnalyzer.polarity_scores(userComment).compound * 100)/20;
 		let negative = false;
 		if(score<0)
 			negative = true;
 		console.log(score)
-		await contract.methods.addComment(userComment, commentHash, Math.abs(score), negative).send({from: accounts[0]});
+		await contract.methods.addComment(userComment, commentHash, Math.abs(parseInt(score*100)), negative).send({from: accounts[0]});
 	}
 
 	getCustomerCall = async () => {
@@ -157,15 +160,15 @@ class App extends Component {
 		const comments = await contract.methods.getComments(commentHash).call();
 		this.setState({ comment: comments });
 	}
-
+	
 	loadHtml() {
-		console.log("tes1", )
-		ipfs.files.cat(this.state.ipfsHash, (err, data) => {
-			if(err) return console.error(err);
-			console.log("Test", data)
-		});
+		// console.log("tes1", )
+		// ipfs.files.cat(this.state.ipfsHash, (err, data) => {
+		// 	if(err) return console.error(err);
+		// 	console.log("Test", data)
+		// });
 		
-		// return (`https://ipfs.io/ipfs/${this.state.ipfsHash}#toolbar=0`);
+		return (`https://ipfs.io/ipfs/${this.state.ipfsHash}#toolbar=0`);
 	}	
 
 	openModal(hash) {
@@ -207,12 +210,9 @@ class App extends Component {
 
 	closeModal() {
 		this.setState({
-			visible: false,
-			// visibleBook: false
+			visible: false
 		});
 	}
-
-	
 
 	getFile(event) {
 		event.preventDefault()
@@ -231,7 +231,6 @@ class App extends Component {
 					return
 				}
 				this.setState({ ipfsHash: result[0].hash })
-				console.log("Book Details: ", this.state.bookDetails);
 				Object.values(this.state.bookDetails).map((key, index) => {
 					console.log(key[3])
 					if (key[3] == this.state.ipfsHash) {
@@ -290,8 +289,8 @@ class App extends Component {
 		});
 	}
 
-	buyToken(event) {
-		event.preventDefault();
+	buyToken() {
+		// event.preventDefault();
 		this.setState(this.buyTokenTransaction);
 	}
 
@@ -302,7 +301,6 @@ class App extends Component {
 	viewHandler(value) {
 		console.log(value);
 		this.openModal(value);
-		this.loadHtml();
 	}
 
 	bookHandler(value, name) {
@@ -331,6 +329,10 @@ class App extends Component {
 		var start = str.slice(38,42);
 		var end = str.slice(0,4);
 		return(start + "..." + end);
+	}
+
+	scoreStore(score, index) {
+		this.setState({score: score})
 	}
 
 	render() {
@@ -381,9 +383,25 @@ class App extends Component {
 			]
 		};
 		
-		const coins = Object.values(this.state.bookDetails).map((key, index) => (
-			<Card onClick={() => this.bookHandler(key[1], key[3])} days={key[6]} rentPrice={key[5]} imag={key[4]} pname={key[0]} author={key[1]} price={key[2]} rentClick={() => this.rentHandler(key[3])} buyClick={() => this.buyHandler(key[3])} />
+		let totalPositive = 0;
+		let totalNegative = 0;
+		let totNeg = 0;
+		let totPos = 0;
+		var isNegative = false;
+
+		Object.values(this.state.comment).map((key, index) => (
+			isNegative = (key[2] == 'true'),
+			isNegative ? totNeg = totNeg + 1 : totPos = totPos + 1, 
+			isNegative ? totalNegative = totalNegative - parseInt(key[1]) : totalPositive = totalPositive + parseInt(key[1])
 		));
+		
+		const coins = Object.values(this.state.bookDetails).map((key, index) => (
+			<Card 	onClick={() => this.bookHandler(key[1], key[3])} 
+				  	days={key[6]} rentPrice={key[5]} imag={key[4]} pname={key[0]} author={key[1]} price={key[2]} 
+					rentClick={() => this.rentHandler(key[3])} buyClick={() => this.buyHandler(key[3])}
+					// score={parseFloat(totalPositive/(100*totPos)).toFixed(2)}
+					/>
+			));
 
 		const booksList = Object.values(this.state.booksBought).map((key, index) => (
 			<ProfileBooks imag={key[2]} pname={key[1]} onClick={() => this.viewHandler(key[0])} />
@@ -401,15 +419,25 @@ class App extends Component {
 			<p>{key[0]} <img width="15px" height="15px" src={require('./utils/tick.png')}/><hr/></p> 
 		));
 		
-		let total = 0;
-		var isNegative = false;
-		Object.values(this.state.comment).map((key) => (
-			isNegative = (key[2] == 'true'),
-			total = isNegative ? total - parseInt(key[1]) : total + parseInt(key[1])
-		));
+	
+
+		const MyHeader = () => (
+			<StickyHeader
+			  header={
+				<div>
+					<p className="Header_title"><strong>
+						<img src={require('./utils/wallet.png')}/>  {parseInt(this.state.wallet)} ATC</strong>
+					</p>
+				</div>
+			  }
+			>
+			</StickyHeader>
+		  );
 
 		return (
 			<div className="App">
+				{MyHeader()}
+
 				<div className="Header">
 					<h1><img className="headIcon" src={require('./iconMain.png')} />auth.or</h1>
 					<p><strong>My Address: </strong>{this.state.accounts[0]}</p>
@@ -418,31 +446,39 @@ class App extends Component {
 
 				<Tabs>
 					<TabList className="tabs">
-						<Tab>Find Content</Tab>
-						<Tab>Upload</Tab>
+						<Tab>Library</Tab>
 						<Tab>Buy Tokens</Tab>
+						<Tab>Upload</Tab>
 						<Tab>Profile</Tab>
 						<Tab>Author Insights</Tab>
 						<Tab>Comments</Tab>
 					</TabList>
-
+					
 					<TabPanel >
-						<div>
-							{/* <button className="refresh" onClick={this.getAll}>Refresh</button> */}
-						</div>
 						<div className="coins">
 								{coins}
 						</div>
-						<Modal className="modal" visible={this.state.visibleTimer} width="500px" height="680px" effect="fadeInUp" onClickAway={() => this.closeViewModal()}>
+						<Modal className="modal" visible={this.state.visibleTimer} width="500px" height="680px" effect="fadeInDown" onClickAway={() => this.closeViewModal()}>
 								<form onSubmit={this.submitComment}>
 									<p><strong>Book Name: </strong>{this.state.currentBook}</p>
-									<p className="totalScore">{total}</p>
+									<p className="totalPositive">{parseFloat(totalPositive/(100)).toFixed(1)}</p>
+									<p className="totalNegative">{parseFloat(Math.abs(totalNegative/(100))).toFixed(1)}</p>
 									<p className="comments">{commentDetails}</p>
 									<input className="text" type='text' placeholder='Submit your review!' onInput={e => this.setState({ userComment: e.target.value })}/>
 									<button className="buy button"><span>Submit</span></button>
 								</form>
 						</Modal>
 
+					</TabPanel>
+
+					<TabPanel className="tab">
+
+						<form className="form" onSubmit={this.buyToken}>
+							<h3>Buy Tokens</h3>
+							<label>Tokens: </label>
+							<input className="text" type='text' onInput={e => this.setState({ token: e.target.value })} />
+							<button className="buy button"><span>Buy </span></button>
+						</form>
 					</TabPanel>
 
 					<TabPanel >
@@ -473,28 +509,14 @@ class App extends Component {
 						</form>
 
 						<Modal className="modal" visible={this.state.visible} width="850px" height="780px" effect="fadeInUp" onClickAway={() => this.closeModal()}>
-							{/* <iframe className="preview" src={this.loadHtml()} ></iframe> */}
+							<iframe className="preview" src={this.loadHtml()} ></iframe>
 
 						</Modal>
 
 					</TabPanel>
 
-					<TabPanel className="tab">
-
-						<form className="form" onSubmit={this.buyToken}>
-							<h3>Buy Tokens</h3>
-							<label>Tokens: </label>
-							<input className="text" type='text' onInput={e => this.setState({ token: e.target.value })} />
-							<button className="buy button"><span>Buy </span></button>
-						</form>
-					</TabPanel>
-
 					<TabPanel>
 						<h3>Profile</h3>
-						<div>
-							{/* <button className="refresh" onClick={this.getCustomerCall}>Refresh</button> */}
-						</div>
-						<p><strong>Wallet Balance: </strong>{parseInt(this.state.wallet)} ATC</p>
 						<p><strong>BOOKS BOUGHT</strong></p>
 						<Slider {...settings} >
 							{booksList}
@@ -507,18 +529,13 @@ class App extends Component {
 						</Slider>
 						<Modal className="modal" visible={this.state.visible} width="850px" height="780px" effect="fadeInUp" onClickAway={() => this.closeModal()}>
 							<p><strong>{} </strong></p>
-							{/* <button onClick={() => this.loadHtml()}><strong>click me</strong></button> */}
-
-							{/* <iframe className="preview" src={this.loadHtml()} ></iframe> */}
+							<iframe className="preview" src={this.loadHtml()} ></iframe>
 						</Modal>
 
 					</TabPanel>
 
 					<TabPanel className="insights">
 						<div>
-							<div>
-								{/* <button className="refresh" onClick={this.getTotal}>Refresh</button> */}
-							</div>
 							<div className="section-div">
 								<section>
 									<h3>Total Books Sold / Rented</h3>
@@ -537,7 +554,6 @@ class App extends Component {
 					</TabPanel>
 					<TabPanel>
 						<div>
-							{/* <button className="refresh" onClick={this.getCustomerCall}>Refresh</button> */}
 							<div>
 								<Slider {...settings} >
 									{bookComment}
