@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import './Card.css';
+import { Tooltip } from '@material-ui/core';
 
 class Card extends Component {
     render() {
@@ -10,8 +11,12 @@ class Card extends Component {
                 <div className="card" >
                     <img className="image" alt="product" src={`https://ipfs.io/ipfs/${this.props.imag}`} align="middle"/>
                     <div className="review">
-                        <img onClick={this.props.onClick} src={require('./utils/review.png')} />    
-                        {/* <p className="score"><strong>{this.props.score}</strong></p>                     */}
+                        <Tooltip placement="right-start" title="Reviews">
+                            <img onClick={this.props.onClick} src={require('./utils/review.png')} />    
+                        </Tooltip>
+                        <Tooltip placement="left-start" title="Book Rating">
+                            <p className="score"><strong>{this.props.score}</strong></p>                    
+                        </Tooltip>
                     </div>
 
                     <div className="p-des">

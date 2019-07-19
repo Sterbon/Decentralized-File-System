@@ -53,7 +53,7 @@
   font-size: 14px;
   background-color: white;
   padding: 0 15px;
-  margin: 5px 0 20px 0;
+  /* margin: 15px 0 20px 0; */
 }
   
 .tabs {
@@ -210,19 +210,6 @@ object {
   border-radius: 4px;
 }
 
-button.refresh {
-  color: white;
-  border: 1px solid #8BC34A;
-  border-radius: 5px;
-  box-shadow: 0.6px 0.6px 1px 0px #888888;
-  height: 30px; 
-  font-size: 14px;
-  letter-spacing: 1.2px;
-  background: rgb(135, 212, 48);
-  cursor: pointer;
-  outline: none;
-}
-
 button.refresh:hover {
   box-shadow: 0.5px 0.5px 0.6px 0px #888888;
 }
@@ -232,14 +219,25 @@ button.refresh:hover {
   margin: 25px auto;
 }
 
+.empty-heading {
+  font-family: 'Quicksand', sans-serif;
+  /* font-weight: bold; */
+  font-size: 40px
+}
+
+h3 {
+  font-family: 'Quicksand', sans-serif;
+}
+
 .button {
   display: inline-block;
-  border-radius: 10px;
-  background-color: #0091EA;
-  border: none;
-  color: #FFFFFF;
+  border-radius: 4px;
+  background-color: rgb(19, 147, 226);
+  border: #282c34;
+  color: rgb(26, 26, 26);
   text-align: center;
   font-size: 16px;
+  font-weight: 100px;
   padding: 8px;
   transition: all 0.5s;
   cursor: pointer;
@@ -272,8 +270,9 @@ button.refresh:hover {
 }
 
 .buy {
-  width: 90px;
+  width: 20%;
   margin: 10px auto 0;
+  margin-top: 40px
 }
 
 div.hash-div {
