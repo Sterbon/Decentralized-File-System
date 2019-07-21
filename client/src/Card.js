@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
 import './Card.css';
 import { Tooltip } from '@material-ui/core';
+import Rating from "@material-ui/lab/Rating";
 
 class Card extends Component {
     render() {
-        
         return (
           
             <React.Fragment>
@@ -15,7 +15,7 @@ class Card extends Component {
                             <img onClick={this.props.onClick} src={require('./utils/review.png')} />    
                         </Tooltip>
                         <Tooltip placement="left-start" title="Book Rating">
-                            <p className="score"><strong>{this.props.score}</strong></p>                    
+                            <Rating className='score' name="half-rating" value={3.6} precision={0.1} readOnly />
                         </Tooltip>
                     </div>
 

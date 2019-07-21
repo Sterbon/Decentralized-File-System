@@ -20,17 +20,16 @@
 
 .review .score {
     position: relative;
-    top: -50px;
-    right: 0px;
-    left: 180px;
-    z-index: 4;
+    top: -40px;
+    left: 90px;
+    z-index: 2;
     height: 20px;
     width: 20px;
-    color: rgb(12, 12, 12);
-    font-size: 16px;
+    /* color: rgb(12, 12, 12); */
+    font-size: 25px;
     padding: 8px;
-    background-color: rgb(184, 179, 179);
-    border-radius: 50%;
+    /* background-color: rgb(184, 179, 179); */
+    /* border-radius: 50%; */
     display: flexbox;
     text-align: center;
     font-weight: bold;

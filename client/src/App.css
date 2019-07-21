@@ -26,14 +26,6 @@
   color: #61dafb;
 }
 
-.Header_title {
-  position: relative;
-  bottom: 10px;
-  right: 0px;
-  left: 600px;
-  z-index: 1;
-}
-
 .preview {
   margin: auto;
   border: 2px solid rgb(22, 21, 21);

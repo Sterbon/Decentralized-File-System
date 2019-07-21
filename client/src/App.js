@@ -11,13 +11,12 @@ import "./App.css";
 import Slider from "react-slick";
 import Dialog from '@material-ui/core/Dialog';
 import TextField from '@material-ui/core/TextField';
-import StickyHeader from 'react-sticky-header';
 import Tooltip from '@material-ui/core/Tooltip';
 
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import 'react-sticky-header/styles.css';
-import { AppBar } from "@material-ui/core";
+import { AppBar, Fab } from "@material-ui/core";
 
 var Sentiment = require('sentiment');
 const sentiment = new Sentiment();
@@ -122,12 +121,12 @@ class App extends Component {
 	setComment = async () => {
 		const { contract, accounts, userComment, commentHash } = this.state;
 		// const score = sentiment.analyze(userComment).score;
-		const score = parseInt(vader.SentimentIntensityAnalyzer.polarity_scores(userComment).compound * 100) / 20;
+		const score = parseInt(vader.SentimentIntensityAnalyzer.polarity_scores(userComment).compound * 100);
 		let negative = false;
 		if (score < 0)
 			negative = true;
 		console.log(score)
-		await contract.methods.addComment(userComment, commentHash, Math.abs(parseInt(score * 100)), negative).send({ from: accounts[0] });
+		await contract.methods.addComment(userComment, commentHash, Math.abs(parseInt(score + 100)), negative).send({ from: accounts[0] });
 	}
 
 	getCustomerCall = async () => {
@@ -302,8 +301,8 @@ class App extends Component {
 		});
 	}
 
-	buyToken() {
-		// event.preventDefault();
+	buyToken(event) {
+		event.preventDefault();
 		this.setState(this.buyTokenTransaction);
 	}
 
@@ -397,7 +396,6 @@ class App extends Component {
 		let totNeg = 0;
 		let totPos = 0;
 		var isNegative = false;
-		let total;
 
 		Object.values(this.state.comment).map((key, index) => (
 			isNegative = (key[2] == 'true'),
@@ -405,11 +403,11 @@ class App extends Component {
 			isNegative ? totalNegative = totalNegative - parseInt(key[1]) : totalPositive = totalPositive + parseInt(key[1])
 		)); 	
 		
-		const coins = Object.values(this.state.bookDetails).map((key, index) => (
+		const allBooks = Object.values(this.state.bookDetails).map((key, index) => (
 			<Card onClick={() => this.bookHandler(key[1], key[3])}
 				days={key[6]} rentPrice={key[5]} imag={key[4]} pname={key[0]} author={key[1]} price={key[2]}
 				rentClick={() => this.rentHandler(key[3])} buyClick={() => this.buyHandler(key[3])}
-				score={parseFloat(this.state.score[index]/100).toFixed(1)}
+				score={parseFloat((this.state.score[index]*5)/200).toFixed(1)}
 			/>
 		));
 
@@ -430,35 +428,24 @@ class App extends Component {
 
 		));
 
-		const MyHeader = () => (
-			<StickyHeader
-				header={
-					<div>
-						<p style={{marginTop: "90px", color: "black"}} className="Header_title"><strong>
+		return (
+			<div className="App">
+			
+				<AppBar position='relative' color="primary">
+					<div className="Header">
+						<h1><img className="headIcon" src={require('./iconMain.png')} />auth.or</h1>
+						<p><strong>My Address: </strong>{this.state.accounts[0]}</p>
+						<p>Upload to IPFS and Secure by Ethereum</p>
+						<p style={{ marginLeft:"80%", color: "white", position: 'sticky'}} ><strong>
 							<Tooltip title="Wallet Balance">
 								<img style={{marginRight: "10px"}} src={require('./utils/wallet.png')} />  
 							</Tooltip>
 							{parseInt(this.state.wallet)} ATC</strong>
 						</p>
 					</div>
-				}
-			>
-			</StickyHeader>
-		);
-
-		return (
-			<div className="App">
-				<AppBar position='relative' color="primary">
-					<div className="Header">
-						<h1><img className="headIcon" src={require('./iconMain.png')} />auth.or</h1>
-						<p><strong>My Address: </strong>{this.state.accounts[0]}</p>
-						<p>Upload to IPFS and Secure by Ethereum</p>
-					</div>
 				</AppBar>
-
 				<Tabs>
 					<AppBar style={{height: "55px"}}  position='sticky' color='inherit'>
-					{MyHeader()}					
 						<TabList className="tabs">
 							<Tab>Library</Tab>
 							<Tab>Buy Tokens</Tab>
@@ -468,11 +455,12 @@ class App extends Component {
 							<Tab>Author Insights</Tab>
 						</TabList>
 					</AppBar>
+
 					<TabPanel >
 						<div className="coins">
-							{coins}
+							{allBooks}
 						</div>
-						<Modal className="modal" visible={this.state.visibleTimer} width="500px" height="680px" effect="fadeInDown" onClickAway={() => this.closeViewModal()}>
+						<Modal className="modal" visible={this.state.visibleTimer} width="40%" height="90%" effect="fadeInDown" onClickAway={() => this.closeViewModal()}>
 							{/* <button onClick={() => this.closeViewModal()}>Close</button> */}
 							<form onSubmit={this.submitComment}>
 								<p><strong>Book Name: </strong>{this.state.currentBook}</p>
@@ -518,8 +506,8 @@ class App extends Component {
 							</div>
 						</form>
 
-						<Modal className="modal" visible={this.state.visible} width="850px" height="780px" effect="fadeInUp" onClickAway={() => this.closeModal()}>
-							<iframe className="preview" src={this.loadHtml()} ></iframe>
+						<Modal className="modal" visible={this.state.visible} width="80%" height="100%" effect="fadeInUp" onClickAway={() => this.closeModal()}>
+							<iframe height="100%" className="preview" src={this.loadHtml()} ></iframe>
 
 						</Modal>
 
@@ -539,7 +527,7 @@ class App extends Component {
 							</Slider>
 						</div>
 						
-						<Modal className="modal" visible={this.state.visible} width="850px" height="780px" effect="fadeInUp" onClickAway={() => this.closeModal()}>
+						<Modal className="modal" visible={this.state.visible} width="80%" height="100%" effect="fadeInUp" onClickAway={() => this.closeModal()}>
 							<p><strong>{} </strong></p>
 							<iframe className="preview" src={this.loadHtml()} ></iframe>
 						</Modal>
@@ -589,6 +577,7 @@ class App extends Component {
 					</TabPanel>
 				</Tabs>
 				
+
 			</div>
 		);
 	}	
