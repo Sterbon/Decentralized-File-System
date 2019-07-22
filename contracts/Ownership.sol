@@ -4,7 +4,6 @@ pragma experimental ABIEncoderV2;
 contract ContentShare {
 
     struct FileMap {
-        
         uint timestamp;
         address owner;
         string contentName;
@@ -13,10 +12,12 @@ contract ContentShare {
         uint priceRent;
         uint rentDays;
         string image;
+        string[][] comments;
+        uint total;
+
     }
 
     struct Customer {
-        
         uint balance;
         string[][] booksBought;
         string[][] booksRent;
@@ -25,46 +26,59 @@ contract ContentShare {
     }
 
     struct rentAgreement {
-        
         uint boughtOn;
         uint validFor;
     }
-    
+
     struct totalBought {
         uint total;
         uint totalEarnings;
     }
-    
-    event FileLogStatus(bool status, uint timestamp, address owner, string ipfsHash);
+
+    struct totalScore {
+        uint score;
+    }
+
+    event FileLogStatus(uint timestamp, address owner, string ipfsHash);
     event BookPurchase(uint customerBalance, uint ownerBalance);
     event TokenPurchase(uint customerBalance, address tokenBuyer);
-    
+
     string[] public hashValues;
     string[] public authors;
     string[] public bookNames;
     string[] public prices;
-    string[][] public bookDetails;  
+    string[][] public bookDetails;
 
+    mapping (string => totalScore) total;
     mapping (string => FileMap) allFiles;
-    mapping (address => Customer) customerDetails; 
+    mapping (address => Customer) customerDetails;
     mapping (address => totalBought) bookStats;
-    
-    function uploadContent(string memory ipfsHash, string memory contentName, string memory ownerName, uint price, uint rentPrice, uint rentDays, string memory image) public {
-        
+
+    function uploadContent(string memory ipfsHash, string memory contentName,
+                                string memory ownerName, uint price, uint rentPrice, uint rentDays, string memory image) public {
         Customer storage customer = customerDetails[msg.sender];
         
         if(allFiles[ipfsHash].timestamp == 0)
         {
-            allFiles[ipfsHash] = FileMap(block.timestamp, msg.sender, contentName, ownerName, price, rentPrice, rentDays, image);
-            customer.uploadHash.push(ipfsHash);
-            hashValues.push(ipfsHash) -1;
-            bookDetails.push([ownerName, contentName, uint2str(price), ipfsHash, image, uint2str(rentPrice), uint2str(rentDays)]);
+            allFiles[ipfsHash].timestamp = block.timestamp;
+            allFiles[ipfsHash].owner = msg.sender;
+            allFiles[ipfsHash].contentName = contentName;
+            allFiles[ipfsHash].ownerName = ownerName;
+            allFiles[ipfsHash].priceBuy = price;
+            allFiles[ipfsHash].priceRent = rentPrice;
+            allFiles[ipfsHash].rentDays = rentDays;
+            allFiles[ipfsHash].image = image;
+            allFiles[ipfsHash].total = 0;
             
-            emit FileLogStatus(true, block.timestamp, msg.sender, ipfsHash);
+            customer.uploadHash.push(ipfsHash);
+            hashValues.push(ipfsHash)-1;
+            bookDetails.push([ownerName, contentName, uint2str(price), ipfsHash, image, uint2str(rentPrice), uint2str(rentDays)]);
+    
+            emit FileLogStatus(block.timestamp, msg.sender, ipfsHash);
         }
         else
         {
-            emit FileLogStatus(true, block.timestamp, msg.sender, ipfsHash);
+            emit FileLogStatus(block.timestamp, msg.sender, ipfsHash);
         }
     }
 
@@ -127,7 +141,6 @@ contract ContentShare {
         
         bookStats[owner].total = bookStats[owner].total + 1;
         bookStats[owner].totalEarnings = bookStats[owner].totalEarnings + rentPrice;
-
     }
     
     function getRentUpdate(string memory fileHash) public view returns (bool) {
@@ -150,10 +163,6 @@ contract ContentShare {
         return (customerDetails[custAddress].balance, customerDetails[custAddress].booksBought, customerDetails[custAddress].booksRent);
     }
     
-    function compareStrings (string memory a, string memory b) public view returns (bool) {
-        return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))) );
-    }
-    
     function getBooks(string memory bookName) public view returns (string memory) {
         for(uint i=0; i<=hashValues.length; i++) {
             string memory name = allFiles[hashValues[i]].contentName;
@@ -169,19 +178,40 @@ contract ContentShare {
     
     function allowComment(string memory ipfsHash) public view returns (bool) {
         Customer memory customer = customerDetails[msg.sender];
+        
         for(uint i =0; i< customer.booksBought.length; i++) {
-            if(compareStrings(ipfsHash, customer.booksBought[0][i])) {
+            if(compareStrings(ipfsHash, customer.booksBought[i][0])) {
                 return true;
             }
         }
     }
     
-    function getBookTotal(string memory ipfsHash) public view returns (uint totalBought) {
+    function addComment(string memory comment, string memory ipfsHash, uint sentiment, bool negative) public {
+        FileMap storage files = allFiles[ipfsHash];
+        require(allowComment(ipfsHash));
+        string memory value = negative ? "true" : "false";
+        negative ? total[ipfsHash].score = total[ipfsHash].score - sentiment : total[ipfsHash].score  = total[ipfsHash].score + sentiment; 
+        files.comments.push([comment, uint2str(sentiment), value]);
+    }
+    
+    function getComments(string memory ipfsHash) public view returns (string[][] memory comment) {
+        return(allFiles[ipfsHash].comments);
+    }
+    
+    function getTotalScore() public view returns (uint[] memory) {
+        uint[] memory totalScoreArray = new uint[](hashValues.length);
+        for(uint i=0; i< hashValues.length; i++) {
+            totalScoreArray[i] = total[hashValues[i]].score;
+        }
+        return totalScoreArray;
+    }
+    
+    function getBookTotal(string memory ipfsHash) public view returns (uint totalBoughtBooks) {
         
         Customer storage customer = customerDetails[msg.sender];
         for(uint i=0; i<= customer.uploadHash.length; i++) {
             if(compareStrings(customer.uploadHash[i],ipfsHash)) {
-                return totalBought;
+                return totalBoughtBooks;
             }
         }
     }
@@ -204,4 +234,9 @@ contract ContentShare {
         }
         return string(bstr);
     }
+    
+    function compareStrings (string memory a, string memory b) public view returns (bool) {
+        return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))) );
+    }
+    
  }
