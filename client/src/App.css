@@ -26,11 +26,18 @@
   color: #61dafb;
 }
 
+.cross {
+  margin-left: 95%;
+  margin-top: 0.5%  
+}
+
+.cross:hover {
+  cursor: pointer;
+}
+
 .preview {
   margin: auto;
   border: 2px solid rgb(22, 21, 21);
-  height: 750px;
-  width: 800px;
   font-family: 'Russo One', sans-serif;
 }
 

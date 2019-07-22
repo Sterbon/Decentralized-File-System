@@ -385,6 +385,25 @@
     },
     {
       "constant": true,
+      "inputs": [
+        {
+          "name": "ipfsHash",
+          "type": "string"
+        }
+      ],
+      "name": "getTotalComments",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
       "inputs": [],
       "name": "getTotalScore",
       "outputs": [

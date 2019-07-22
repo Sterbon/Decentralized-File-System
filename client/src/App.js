@@ -15,17 +15,16 @@ import Tooltip from '@material-ui/core/Tooltip';
 
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-import 'react-sticky-header/styles.css';
 import { AppBar, Fab } from "@material-ui/core";
 
-var Sentiment = require('sentiment');
-const sentiment = new Sentiment();
+// var Sentiment = require('sentiment');
+// const sentiment = new Sentiment();
 
 const vader = require('vader-sentiment');
 
 class App extends Component {
 
-	state = { score: [], currentBook: null, commentHash: null, userComment: null, comment: [], url: null, earnings: null, totalSold: null, imageBuffer: null, bookImage: null, exists: false, visibleTimer: false, rentedBooks: [], rentHash: null, rent: null, rentDays: null, booksBoughtName: [], booksBought: [], wallet: null, current: [], visibleBook: false, bookDetails: [], prnt: false, render: true, visible: false, bookName: null, clientName: "utsav", token: 0, ownerName: null, price: 0, contentName: null, viewText: 'Show Preview', showPreview: false, fileMetadata: [], storageValue: [], web3: null, accounts: null, contract: null, buffer: null, ipfsHash: null };
+	state = { totalComments: null, score: [], currentBook: null, commentHash: null, userComment: null, comment: [], url: null, earnings: null, totalSold: null, imageBuffer: null, bookImage: null, exists: false, visibleTimer: false, rentedBooks: [], rentHash: null, rent: null, rentDays: null, booksBoughtName: [], booksBought: [], wallet: null, current: [], visibleBook: false, bookDetails: [], prnt: false, render: true, visible: false, bookName: null, clientName: "utsav", token: 0, ownerName: null, price: 0, contentName: null, viewText: 'Show Preview', showPreview: false, fileMetadata: [], storageValue: [], web3: null, accounts: null, contract: null, buffer: null, ipfsHash: null };
 
 	constructor(props) {
 		super(props)
@@ -80,7 +79,7 @@ class App extends Component {
 				OwnershipContract.abi,
 				deployedNetwork && deployedNetwork.address,
 			);
-			instance.address = "0x5deed41b56a1761062d03cb3aef57a2c95d25cd7";
+			instance.address = "0xeb3385629d1f53c8922934b73ed2754ff93a7ccc";
 			// Set web3, accounts, and contract to the state, and then proceed with an
 			// example of interacting with the contract's methods.
 			this.setState({ web3, accounts, contract: instance });
@@ -170,7 +169,13 @@ class App extends Component {
 		const { contract, accounts } = this.state;
 		const scoreArray = await contract.methods.getTotalScore().call();
 		this.setState({ score: scoreArray});
-		console.log(this.state.score)
+	}
+
+	getTotalComments = async (hash) => {
+		const { contract } = this.state;
+		const scoreArray = await contract.methods.getTotalComments(hash).call();
+		this.setState({ totalComments: parseInt(scoreArray._hex)});
+		// console.log(this.state.totalComments)
 	}
 
 	loadHtml() {
@@ -235,13 +240,13 @@ class App extends Component {
 		reader.onloadend = () => {
 			this.setState({ buffer: Buffer(reader.result) })
 			console.log('buffer', this.state.buffer)
-
+			this.setState({ipfsHash: null})
+			
 			ipfs.files.add(this.state.buffer, (error, result) => {
 				if (error) {
 					console.error(error)
 					return
 				}
-				
 				this.setState({ ipfsHash: result[0].hash })
 				Object.values(this.state.bookDetails).map((key, index) => {
 					console.log(key[3])
@@ -263,11 +268,11 @@ class App extends Component {
 		const file = event.target.files[0]
 		const reader = new window.FileReader()
 		reader.readAsArrayBuffer(file);
-		console.log('Image buffer', this)
 
 		reader.onloadend = () => {
 			this.setState({ imageBuffer: Buffer(reader.result) })
 			console.log('Image buffer', this.state.imageBuffer)
+			this.setState({bookImage: null})
 
 			ipfs.files.add(this.state.imageBuffer, (error, result) => {
 				if (error) {
@@ -402,12 +407,14 @@ class App extends Component {
 			isNegative ? totNeg = totNeg + 1 : totPos = totPos + 1,
 			isNegative ? totalNegative = totalNegative - parseInt(key[1]) : totalPositive = totalPositive + parseInt(key[1])
 		)); 	
-		
+
 		const allBooks = Object.values(this.state.bookDetails).map((key, index) => (
+			// this.getTotalComments(key[3]),
+			console.log(parseFloat((this.state.score[index]*5)/(200)).toFixed(1)),
 			<Card onClick={() => this.bookHandler(key[1], key[3])}
 				days={key[6]} rentPrice={key[5]} imag={key[4]} pname={key[0]} author={key[1]} price={key[2]}
 				rentClick={() => this.rentHandler(key[3])} buyClick={() => this.buyHandler(key[3])}
-				score={parseFloat((this.state.score[index]*5)/200).toFixed(1)}
+				score={parseFloat((this.state.score[index]*5)/(200)).toFixed(1)}
 			/>
 		));
 
@@ -450,8 +457,8 @@ class App extends Component {
 							<Tab>Library</Tab>
 							<Tab>Buy Tokens</Tab>
 							<Tab>Upload</Tab>
-							<Tab>Profile</Tab>
-							<Tab>Comments</Tab>
+							<Tab>My Books</Tab>
+							<Tab>Add Review</Tab>
 							<Tab>Author Insights</Tab>
 						</TabList>
 					</AppBar>
@@ -463,9 +470,10 @@ class App extends Component {
 						<Modal className="modal" visible={this.state.visibleTimer} width="40%" height="90%" effect="fadeInDown" onClickAway={() => this.closeViewModal()}>
 							{/* <button onClick={() => this.closeViewModal()}>Close</button> */}
 							<form onSubmit={this.submitComment}>
+								<img className="cross" onClick={() =>this.closeViewModal() } className='cross' src={require('./utils/cross1.png')} />								
 								<p><strong>Book Name: </strong>{this.state.currentBook}</p>
-								<p className="totalPositive">{parseFloat(totalPositive / (100*totPos)).toFixed(1)}</p>
-								<p className="totalNegative">{parseFloat(Math.abs(totalNegative / (100*totNeg))).toFixed(1)}</p>
+								<p className="totalPositive">{parseFloat((totalPositive * 5)/ (200 * totPos)).toFixed(1)}</p>
+								<p className="totalNegative">{parseFloat(Math.abs((totalNegative * 5)/ (200 * totNeg))).toFixed(1)}</p>
 								<p className="comments">{commentDetails}</p>
 								<TextField className="text" type='text' placeholder='Submit your review!' onInput={e => this.setState({ userComment: e.target.value })} />
 								<button className="buy button"><span>Submit</span></button>
@@ -498,17 +506,17 @@ class App extends Component {
 							<TextField margin="normal" variant="outlined" label="Purchase Price" type='text' onInput={e => this.setState({ price: e.target.value })} />
 							<TextField margin="normal" variant="outlined" label="Rent Price" type='text' onInput={e => this.setState({ rent: e.target.value })} />
 							<TextField margin="normal" variant="outlined" label="Rent Duration" placeholder="In Days" type='text' onInput={e => this.setState({ rentDays: e.target.value })} />
-							<button className="button"><span>Upload</span></button><br></br>
-
+							<button id='upload' className="button"><span>Upload</span></button><br></br>
+						
 							<div className="hash-div">
 								<strong>IPFS Hash: </strong>
 									<span className="hashLink" onClick={() => this.openModal(this.state.ipfsHash)}>{this.state.ipfsHash}</span>
 							</div>
 						</form>
 
-						<Modal className="modal" visible={this.state.visible} width="80%" height="100%" effect="fadeInUp" onClickAway={() => this.closeModal()}>
-							<iframe height="100%" className="preview" src={this.loadHtml()} ></iframe>
-
+						<Modal className="modal" visible={this.state.visible} width="100%" height="100%" effect="fadeInUp" onClickAway={() => this.closeModal()}>
+							<img className="cross" onClick={() =>this.closeModal() } className='cross' src={require('./utils/cross1.png')} />															
+							<iframe height="100%" width="100%" className="preview" src={this.loadHtml()} ></iframe>
 						</Modal>
 
 					</TabPanel>
@@ -520,16 +528,15 @@ class App extends Component {
 								{booksList}
 							</Slider>
 							<hr></hr>
-							<br></br>
 							<h3>Books Rented</h3>
 							<Slider {...settings} >
 								{rentList}
 							</Slider>
 						</div>
 						
-						<Modal className="modal" visible={this.state.visible} width="80%" height="100%" effect="fadeInUp" onClickAway={() => this.closeModal()}>
-							<p><strong>{} </strong></p>
-							<iframe className="preview" src={this.loadHtml()} ></iframe>
+						<Modal className="modal" visible={this.state.visible} width="100%" height="100%" effect="fadeInUp" onClickAway={() => this.closeModal()}>
+							<img className="cross" onClick={() =>this.closeModal() } className='cross' src={require('./utils/cross1.png')} />															
+							<iframe height="100%" width="100%" className="preview" src={this.loadHtml()} ></iframe>
 						</Modal>
 
 					</TabPanel>
