@@ -13,8 +13,11 @@ contract ContentShare {
         uint rentDays;
         string image;
         string[][] comments;
-        uint total;
-
+        uint totalBought;
+        uint totalRented;
+        uint totalPositive;
+        uint totalNegative;
+        uint earnings;
     }
 
     struct Customer {
@@ -32,6 +35,8 @@ contract ContentShare {
 
     struct totalBought {
         uint total;
+        uint totalBought;
+        uint totalRented;
         uint totalEarnings;
     }
 
@@ -68,8 +73,7 @@ contract ContentShare {
             allFiles[ipfsHash].priceRent = rentPrice;
             allFiles[ipfsHash].rentDays = rentDays;
             allFiles[ipfsHash].image = image;
-            allFiles[ipfsHash].total = 0;
-            
+
             customer.uploadHash.push(ipfsHash);
             hashValues.push(ipfsHash)-1;
             bookDetails.push([ownerName, contentName, uint2str(price), ipfsHash, image, uint2str(rentPrice), uint2str(rentDays)]);
@@ -87,9 +91,10 @@ contract ContentShare {
         return (allFiles[fileHash].contentName);
     }
     
-    function getUploads(address custAddress) public view returns (uint total, uint earnings) {
+    function getUploads(address custAddress) public view returns (uint total, uint earnings, uint totalBought, uint totalRented) {
         
-        return(bookStats[custAddress].total, bookStats[custAddress].totalEarnings);
+        return(bookStats[custAddress].total, bookStats[custAddress].totalEarnings, bookStats[custAddress].totalBought, 
+                                            bookStats[custAddress].totalRented);
     }
     
     function purchase(string memory fileHash) public {
@@ -111,6 +116,10 @@ contract ContentShare {
         
         bookStats[owner].total = bookStats[owner].total + 1;
         bookStats[owner].totalEarnings = bookStats[owner].totalEarnings + unitPrice;
+        bookStats[owner].totalBought = bookStats[owner].totalBought + 1;
+
+        allFiles[fileHash].earnings = allFiles[fileHash].earnings + unitPrice;
+        allFiles[fileHash].totalBought = allFiles[fileHash].totalBought + 1;
         
         customer.booksBought.push([fileHash, allFiles[fileHash].contentName, allFiles[fileHash].image]) -1;
         emit BookPurchase(customer.balance, author.balance);
@@ -138,8 +147,12 @@ contract ContentShare {
         
         customer.booksRent.push([fileHash, allFiles[fileHash].contentName, allFiles[fileHash].image]) -1;
         customer.rentDetails[fileHash] = rentAgreement(currentTime, finalTime);
+
+        allFiles[fileHash].totalRented = allFiles[fileHash].totalRented + 1;
+        allFiles[fileHash].earnings = allFiles[fileHash].earnings + rentPrice;
         
         bookStats[owner].total = bookStats[owner].total + 1;
+        bookStats[owner].totalRented = bookStats[owner].totalRented + 1;
         bookStats[owner].totalEarnings = bookStats[owner].totalEarnings + rentPrice;
     }
     
@@ -190,12 +203,17 @@ contract ContentShare {
         FileMap storage files = allFiles[ipfsHash];
         require(allowComment(ipfsHash));
         string memory value = negative ? "true" : "false";
-        negative ? total[ipfsHash].score = total[ipfsHash].score - sentiment : total[ipfsHash].score  = total[ipfsHash].score + sentiment; 
+        negative ? total[ipfsHash].score = total[ipfsHash].score - sentiment : 
+                            total[ipfsHash].score  = total[ipfsHash].score + sentiment; 
         files.comments.push([comment, uint2str(sentiment), value]);
     }
     
     function getComments(string memory ipfsHash) public view returns (string[][] memory comment) {
         return(allFiles[ipfsHash].comments);
+    }
+    
+    function getTotalComments(string memory ipfsHash) public view returns (uint) {
+        return(allFiles[ipfsHash].comments.length);
     }
     
     function getTotalScore() public view returns (uint[] memory) {
@@ -215,6 +233,25 @@ contract ContentShare {
             }
         }
     }
+    
+    function getBooksInsight(address custAddress) public view returns(string[] memory) {
+       
+        Customer storage customer = customerDetails[msg.sender];
+     
+        string[][8] memory books;
+        
+        for(uint i=0; i< customer.uploadHash.length; i++) {
+            books[i][0] = allFiles[customer.uploadHash[i]].contentName;    
+            books[i][1] = allFiles[customer.uploadHash[i]].image;
+            books[i][2] = uint2str(allFiles[customer.uploadHash[i]].totalBought);
+            books[i][3] = uint2str(allFiles[customer.uploadHash[i]].totalRented);
+            books[i][4] = uint2str(allFiles[customer.uploadHash[i]].earnings);
+            books[i][5] = uint2str(allFiles[customer.uploadHash[i]].totalNegative);
+            books[i][6] = uint2str(allFiles[customer.uploadHash[i]].totalPositive);
+            books[i][7] = uint2str(total[customer.uploadHash[i]].score);
+        }
+        return books;
+    }   
     
     function uint2str(uint _i) public view returns (string memory _uintAsString) {
         if (_i == 0) {
