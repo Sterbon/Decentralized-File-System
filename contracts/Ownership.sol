@@ -205,6 +205,8 @@ contract ContentShare {
         string memory value = negative ? "true" : "false";
         negative ? total[ipfsHash].score = total[ipfsHash].score - sentiment : 
                             total[ipfsHash].score  = total[ipfsHash].score + sentiment; 
+        negative ? allFiles[ipfsHash].totalNegative = allFiles[ipfsHash].totalNegative +1 : 
+                                        allFiles[ipfsHash].totalPositive = allFiles[ipfsHash].totalPositive +1;
         files.comments.push([comment, uint2str(sentiment), value]);
     }
     
@@ -234,13 +236,13 @@ contract ContentShare {
         }
     }
     
-    function getBooksInsight(address custAddress) public view returns(string[] memory) {
+    function getBooksInsight(address custAddress) public view returns(string[][] memory) {
        
-        Customer storage customer = customerDetails[msg.sender];
-     
-        string[][8] memory books;
-        
+        Customer storage customer = customerDetails[custAddress];
+        string[][] memory books = new string[][](customer.uploadHash.length);
+
         for(uint i=0; i< customer.uploadHash.length; i++) {
+            books[i] = new string[](9);
             books[i][0] = allFiles[customer.uploadHash[i]].contentName;    
             books[i][1] = allFiles[customer.uploadHash[i]].image;
             books[i][2] = uint2str(allFiles[customer.uploadHash[i]].totalBought);
@@ -249,6 +251,7 @@ contract ContentShare {
             books[i][5] = uint2str(allFiles[customer.uploadHash[i]].totalNegative);
             books[i][6] = uint2str(allFiles[customer.uploadHash[i]].totalPositive);
             books[i][7] = uint2str(total[customer.uploadHash[i]].score);
+            books[i][8] = customer.uploadHash[i];
         }
         return books;
     }   
