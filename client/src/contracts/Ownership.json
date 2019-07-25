@@ -303,6 +303,25 @@
       "constant": true,
       "inputs": [
         {
+          "name": "custAddress",
+          "type": "address"
+        }
+      ],
+      "name": "getBooksInsight",
+      "outputs": [
+        {
+          "name": "books",
+          "type": "string[][]"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
           "name": "ipfsHash",
           "type": "string"
         }
@@ -432,6 +451,14 @@
         },
         {
           "name": "earnings",
+          "type": "uint256"
+        },
+        {
+          "name": "totalBought",
+          "type": "uint256"
+        },
+        {
+          "name": "totalRented",
           "type": "uint256"
         }
       ],

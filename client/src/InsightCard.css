@@ -1,0 +1,66 @@
+section {
+    background-color: rgba(255, 255, 255, 0.637);
+    border-radius: 4px;
+    padding: 20px;
+    display: flex;
+    width: auto;
+    height: auto;
+    margin: 30px;
+    flex-direction: column;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+    margin-top :10%; 
+    font-size: 15px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif
+  }
+
+.bookwise {
+    display: flex;
+    flex-direction: row
+}
+
+.bookDisplay .review {
+    width: 30px;
+    height: 30px;
+    margin-left: 420px;
+    margin-top: -30px;
+}
+
+.bookwise .image-book .image {
+    width: 240px;
+    border-bottom: 1px solid #e8e8e8; 
+    border-radius: 5px; 
+    height: 280px;
+    margin-left: 10px
+  }
+  
+.bookwise .numbers {
+    flex-direction: column;
+    border: 1px solid rgba(0, 0, 0, 0.856);
+    border-radius: 4px;
+    margin: 10px;
+    margin-top: 30px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif
+  }
+  
+.bookwise .numbers .purchase {
+    display: flex;
+    flex-direction: row;
+    margin: 10px;
+}
+
+p {
+    margin: 7px
+}
+
+h4{
+    border: 1px solid black;
+    padding: 10px;
+    border-radius: 4px;
+    max-width: 70%;
+    align-self: center;
+}
+.textbox .score {
+    margin-left: 15%;
+    font-size: 30px;
+    margin-bottom: 0%
+}

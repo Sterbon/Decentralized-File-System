@@ -12,7 +12,7 @@ import Slider from "react-slick";
 import Dialog from '@material-ui/core/Dialog';
 import TextField from '@material-ui/core/TextField';
 import Tooltip from '@material-ui/core/Tooltip';
-
+import InsightCard from './InsightCard.js'
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { AppBar, Fab } from "@material-ui/core";
@@ -24,7 +24,7 @@ const vader = require('vader-sentiment');
 
 class App extends Component {
 
-	state = { totalComments: null, score: [], currentBook: null, commentHash: null, userComment: null, comment: [], url: null, earnings: null, totalSold: null, imageBuffer: null, bookImage: null, exists: false, visibleTimer: false, rentedBooks: [], rentHash: null, rent: null, rentDays: null, booksBoughtName: [], booksBought: [], wallet: null, current: [], visibleBook: false, bookDetails: [], prnt: false, render: true, visible: false, bookName: null, clientName: "utsav", token: 0, ownerName: null, price: 0, contentName: null, viewText: 'Show Preview', showPreview: false, fileMetadata: [], storageValue: [], web3: null, accounts: null, contract: null, buffer: null, ipfsHash: null };
+	state = { bookInsight: [], totalRented: null, totalComments: null, score: [], currentBook: null, commentHash: null, userComment: null, comment: [], url: null, earnings: null, totalSold: null, imageBuffer: null, bookImage: null, exists: false, visibleTimer: false, rentedBooks: [], rentHash: null, rent: null, rentDays: null, booksBoughtName: [], booksBought: [], wallet: null, current: [], visibleBook: false, bookDetails: [], prnt: false, render: true, visible: false, bookName: null, clientName: "utsav", token: 0, ownerName: null, price: 0, contentName: null, viewText: 'Show Preview', showPreview: false, fileMetadata: [], storageValue: [], web3: null, accounts: null, contract: null, buffer: null, ipfsHash: null };
 
 	constructor(props) {
 		super(props)
@@ -56,6 +56,7 @@ class App extends Component {
 		setInterval(() => this.getCustomerCall(), 400)
 		setInterval(() => this.getTotal(), 400)
 		setInterval(() => this.getTotalScore(),400)
+		setInterval(() => this.getBookInsight(), 400)
 
 		var self = this;
 		window.addEventListener("keyup", function (e) {
@@ -79,7 +80,7 @@ class App extends Component {
 				OwnershipContract.abi,
 				deployedNetwork && deployedNetwork.address,
 			);
-			instance.address = "0xeb3385629d1f53c8922934b73ed2754ff93a7ccc";
+			instance.address = "0x48a7e93b24aaa26e74dc570d842c775966aa4394";
 			// Set web3, accounts, and contract to the state, and then proceed with an
 			// example of interacting with the contract's methods.
 			this.setState({ web3, accounts, contract: instance });
@@ -121,6 +122,7 @@ class App extends Component {
 		const { contract, accounts, userComment, commentHash } = this.state;
 		// const score = sentiment.analyze(userComment).score;
 		const score = parseInt(vader.SentimentIntensityAnalyzer.polarity_scores(userComment).compound * 100);
+		console.log(score)
 		let negative = false;
 		if (score < 0)
 			negative = true;
@@ -156,7 +158,7 @@ class App extends Component {
 	getTotal = async () => {
 		const { contract, accounts } = this.state;
 		const total = await contract.methods.getUploads(accounts[0]).call();
-		this.setState({ totalSold: total[0], earnings: total[1] });
+		this.setState({ totalSold: total[2], totalRented: total[3],earnings: total[1] });
 	}
 
 	getComments = async (commentHash) => {
@@ -178,13 +180,14 @@ class App extends Component {
 		// console.log(this.state.totalComments)
 	}
 
-	loadHtml() {
-		// console.log("tes1", )
-		// ipfs.files.cat(this.state.ipfsHash, (err, data) => {
-		// 	if(err) return console.error(err);
-		// 	console.log("Test", data)
-		// });
+	getBookInsight = async () => {
+		const { contract, accounts } = this.state;
+		const insights = await contract.methods.getBooksInsight(accounts[0]).call();
+		this.setState({ bookInsight: insights });
+		console.log(this.state.bookInsight)		
+	}
 
+	loadHtml() {
 		return (`https://ipfs.io/ipfs/${this.state.ipfsHash}#toolbar=0`);
 	}
 
@@ -410,7 +413,7 @@ class App extends Component {
 
 		const allBooks = Object.values(this.state.bookDetails).map((key, index) => (
 			// this.getTotalComments(key[3]),
-			console.log(parseFloat((this.state.score[index]*5)/(200)).toFixed(1)),
+			// console.log(parseFloat((this.state.score[index]*5)/(200)).toFixed(1)),
 			<Card onClick={() => this.bookHandler(key[1], key[3])}
 				days={key[6]} rentPrice={key[5]} imag={key[4]} pname={key[0]} author={key[1]} price={key[2]}
 				rentClick={() => this.rentHandler(key[3])} buyClick={() => this.buyHandler(key[3])}
@@ -433,6 +436,14 @@ class App extends Component {
 		const commentDetails = Object.values(this.state.comment).map((key, index) => (
 			<p>{key[0]} <img width="15px" height="15px" src={require('./utils/tick.png')} /><hr /></p>
 
+		));
+		
+		const insight = Object.values(this.state.bookInsight).map((key,index) => (
+			<InsightCard 
+				bookName={key[0]} imag={key[1]} bought={key[2]} 
+				rented={key[3]} earning={key[4]} negative={key[5]} 
+				positive={key[6]} score={parseFloat((key[7]*5)/200).toFixed(1)}
+			/>
 		));
 
 		return (
@@ -472,8 +483,8 @@ class App extends Component {
 							<form onSubmit={this.submitComment}>
 								<img className="cross" onClick={() =>this.closeViewModal() } className='cross' src={require('./utils/cross1.png')} />								
 								<p><strong>Book Name: </strong>{this.state.currentBook}</p>
-								<p className="totalPositive">{parseFloat((totalPositive * 5)/ (200 * totPos)).toFixed(1)}</p>
-								<p className="totalNegative">{parseFloat(Math.abs((totalNegative * 5)/ (200 * totNeg))).toFixed(1)}</p>
+								<p className="totalPositive">{parseFloat((totalPositive * 5)/ (200)).toFixed(1)}</p>
+								<p className="totalNegative">{parseFloat(Math.abs((totalNegative * 5)/ (200))).toFixed(1)}</p>
 								<p className="comments">{commentDetails}</p>
 								<TextField className="text" type='text' placeholder='Submit your review!' onInput={e => this.setState({ userComment: e.target.value })} />
 								<button className="buy button"><span>Submit</span></button>
@@ -567,18 +578,21 @@ class App extends Component {
 					<TabPanel className="insights">
 						<div>
 							<div className="section-div">
-								<section>
-									<h3>Total Books Sold / Rented</h3>
+								<section className='section'>
+									<h3>Books Sold </h3>
 									<h1 className="head">{parseInt(this.state.totalSold)}</h1>
 								</section>
-								<section>
-									<h3>Total Earnings</h3>
+								<section className='section'>
+									<h3>Books Rented </h3>
+									<h1 className="head">{parseInt(this.state.totalRented)}</h1>
+								</section>
+								<section className='section'>
+									<h3>Earnings</h3>
 									<h1 className="head">{parseInt(this.state.earnings) + " ATC"}</h1>
 								</section>
-								{/* <section>
-									<h3>Author Rating</h3>
-									<h1 className="head">{total}</h1>
-								</section> */}
+							</div>
+							<div className='insightCard'>
+								{insight}
 							</div>
 						</div>
 					</TabPanel>
