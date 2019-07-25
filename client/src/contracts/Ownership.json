@@ -310,7 +310,7 @@
       "name": "getBooksInsight",
       "outputs": [
         {
-          "name": "books",
+          "name": "",
           "type": "string[][]"
         }
       ],

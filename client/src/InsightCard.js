@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import './InsightCard.css';
-import { Tooltip } from '@material-ui/core';
+import { Tooltip, Button } from '@material-ui/core';
 import Rating from "@material-ui/lab/Rating";
 import { fontSize } from '@material-ui/system';
 
@@ -9,9 +9,9 @@ class InsightCard extends Component {
 
         return (
             <React.Fragment>
-                <div className='bookDisplay' onClick={this.props.onClick}>
+                <div className='bookDisplay'>
                     <section>
-                    <h4>{this.props.bookName}</h4>
+                        <h3>{this.props.bookName}</h3>
                         <div className='bookwise'>
                             <div className='image-book'>
                                 <img className='image' src={(`https://ipfs.io/ipfs/${this.props.imag}`)}></img>
@@ -33,11 +33,10 @@ class InsightCard extends Component {
                                         <p>Negative <strong>{this.props.negative}</strong></p>
                                     </div>
                                 </div>
+                                    <Button onClick={this.props.comments} style={{marginTop : '25px'}} variant='outlined' color='primary'>View Comments</Button>
                             </div>
                         </div>
-                        <Tooltip placement="left-start" title='Read what people said!'>
-                            <img className='review' src={require('./utils/review.png')}></img>
-                        </Tooltip>
+
                     </section>
                 </div>
             </React.Fragment>

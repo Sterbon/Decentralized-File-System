@@ -55,7 +55,7 @@ class App extends Component {
 		setInterval(() => this.getAll(), 400)
 		setInterval(() => this.getCustomerCall(), 400)
 		setInterval(() => this.getTotal(), 400)
-		setInterval(() => this.getTotalScore(),400)
+		setInterval(() => this.getTotalScore(), 400)
 		setInterval(() => this.getBookInsight(), 400)
 
 		var self = this;
@@ -80,7 +80,7 @@ class App extends Component {
 				OwnershipContract.abi,
 				deployedNetwork && deployedNetwork.address,
 			);
-			instance.address = "0x48a7e93b24aaa26e74dc570d842c775966aa4394";
+			instance.address = "0xe79dfc61c6373398f9996fcd48badaa933c0c556";
 			// Set web3, accounts, and contract to the state, and then proceed with an
 			// example of interacting with the contract's methods.
 			this.setState({ web3, accounts, contract: instance });
@@ -158,7 +158,7 @@ class App extends Component {
 	getTotal = async () => {
 		const { contract, accounts } = this.state;
 		const total = await contract.methods.getUploads(accounts[0]).call();
-		this.setState({ totalSold: total[2], totalRented: total[3],earnings: total[1] });
+		this.setState({ totalSold: total[2], totalRented: total[3], earnings: total[1] });
 	}
 
 	getComments = async (commentHash) => {
@@ -170,13 +170,13 @@ class App extends Component {
 	getTotalScore = async () => {
 		const { contract, accounts } = this.state;
 		const scoreArray = await contract.methods.getTotalScore().call();
-		this.setState({ score: scoreArray});
+		this.setState({ score: scoreArray });
 	}
 
 	getTotalComments = async (hash) => {
 		const { contract } = this.state;
 		const scoreArray = await contract.methods.getTotalComments(hash).call();
-		this.setState({ totalComments: parseInt(scoreArray._hex)});
+		this.setState({ totalComments: parseInt(scoreArray._hex) });
 		// console.log(this.state.totalComments)
 	}
 
@@ -184,7 +184,7 @@ class App extends Component {
 		const { contract, accounts } = this.state;
 		const insights = await contract.methods.getBooksInsight(accounts[0]).call();
 		this.setState({ bookInsight: insights });
-		console.log(this.state.bookInsight)		
+		console.log(this.state.bookInsight)
 	}
 
 	loadHtml() {
@@ -197,10 +197,6 @@ class App extends Component {
 				visible: true,
 				ipfsHash: hash
 			});
-			// setTimeout(
-			//   function () {
-			//     this.setState({ render: false });
-			//   }.bind(this), 100000);
 		}
 		else {
 			this.setState({
@@ -214,10 +210,6 @@ class App extends Component {
 			this.setState({
 				visibleTimer: true
 			});
-			// setTimeout(
-			// 	function () {
-			// 		this.setState({ render: false });
-			// 	}.bind(this), 10000);
 		}
 	}
 
@@ -243,8 +235,8 @@ class App extends Component {
 		reader.onloadend = () => {
 			this.setState({ buffer: Buffer(reader.result) })
 			console.log('buffer', this.state.buffer)
-			this.setState({ipfsHash: null})
-			
+			this.setState({ ipfsHash: null })
+
 			ipfs.files.add(this.state.buffer, (error, result) => {
 				if (error) {
 					console.error(error)
@@ -275,7 +267,7 @@ class App extends Component {
 		reader.onloadend = () => {
 			this.setState({ imageBuffer: Buffer(reader.result) })
 			console.log('Image buffer', this.state.imageBuffer)
-			this.setState({bookImage: null})
+			this.setState({ bookImage: null })
 
 			ipfs.files.add(this.state.imageBuffer, (error, result) => {
 				if (error) {
@@ -350,7 +342,7 @@ class App extends Component {
 		var end = str.slice(0, 4);
 		return (start + "..." + end);
 	}
-	
+
 	render() {
 		if (!this.state.web3) {
 			return (
@@ -409,7 +401,7 @@ class App extends Component {
 			isNegative = (key[2] == 'true'),
 			isNegative ? totNeg = totNeg + 1 : totPos = totPos + 1,
 			isNegative ? totalNegative = totalNegative - parseInt(key[1]) : totalPositive = totalPositive + parseInt(key[1])
-		)); 	
+		));
 
 		const allBooks = Object.values(this.state.bookDetails).map((key, index) => (
 			// this.getTotalComments(key[3]),
@@ -417,7 +409,7 @@ class App extends Component {
 			<Card onClick={() => this.bookHandler(key[1], key[3])}
 				days={key[6]} rentPrice={key[5]} imag={key[4]} pname={key[0]} author={key[1]} price={key[2]}
 				rentClick={() => this.rentHandler(key[3])} buyClick={() => this.buyHandler(key[3])}
-				score={parseFloat((this.state.score[index]*5)/(200)).toFixed(1)}
+				score={parseFloat((this.state.score[index] * 5) / (200)).toFixed(1)}
 			/>
 		));
 
@@ -437,33 +429,34 @@ class App extends Component {
 			<p>{key[0]} <img width="15px" height="15px" src={require('./utils/tick.png')} /><hr /></p>
 
 		));
-		
-		const insight = Object.values(this.state.bookInsight).map((key,index) => (
-			<InsightCard 
-				bookName={key[0]} imag={key[1]} bought={key[2]} 
-				rented={key[3]} earning={key[4]} negative={key[5]} 
-				positive={key[6]} score={parseFloat((key[7]*5)/200).toFixed(1)}
+
+		const insight = Object.values(this.state.bookInsight).map((key, index) => (
+			<InsightCard
+				bookName={key[0]} imag={key[1]} bought={key[2]}
+				rented={key[3]} earning={key[4]} negative={key[5]}
+				positive={key[6]} score={parseFloat((key[7] * 5) / 200).toFixed(1)}
+				comments={() => this.bookHandler(key[0], key[8])}
 			/>
 		));
 
 		return (
 			<div className="App">
-			
+
 				<AppBar position='relative' color="primary">
 					<div className="Header">
 						<h1><img className="headIcon" src={require('./iconMain.png')} />auth.or</h1>
 						<p><strong>My Address: </strong>{this.state.accounts[0]}</p>
 						<p>Upload to IPFS and Secure by Ethereum</p>
-						<p style={{ marginLeft:"80%", color: "white", position: 'sticky'}} ><strong>
+						<p style={{ marginLeft: "80%", color: "white", position: 'sticky' }} ><strong>
 							<Tooltip title="Wallet Balance">
-								<img style={{marginRight: "10px"}} src={require('./utils/wallet.png')} />  
+								<img style={{ marginRight: "10px" }} src={require('./utils/wallet.png')} />
 							</Tooltip>
 							{parseInt(this.state.wallet)} ATC</strong>
 						</p>
 					</div>
 				</AppBar>
 				<Tabs>
-					<AppBar style={{height: "55px"}}  position='sticky' color='inherit'>
+					<AppBar style={{ height: "55px" }} position='sticky' color='inherit'>
 						<TabList className="tabs">
 							<Tab>Library</Tab>
 							<Tab>Buy Tokens</Tab>
@@ -481,10 +474,10 @@ class App extends Component {
 						<Modal className="modal" visible={this.state.visibleTimer} width="40%" height="90%" effect="fadeInDown" onClickAway={() => this.closeViewModal()}>
 							{/* <button onClick={() => this.closeViewModal()}>Close</button> */}
 							<form onSubmit={this.submitComment}>
-								<img className="cross" onClick={() =>this.closeViewModal() } className='cross' src={require('./utils/cross1.png')} />								
+								<img className="cross" onClick={() => this.closeViewModal()} className='cross' src={require('./utils/cross1.png')} />
 								<p><strong>Book Name: </strong>{this.state.currentBook}</p>
-								<p className="totalPositive">{parseFloat((totalPositive * 5)/ (200)).toFixed(1)}</p>
-								<p className="totalNegative">{parseFloat(Math.abs((totalNegative * 5)/ (200))).toFixed(1)}</p>
+								<p className="totalPositive">{parseFloat((totalPositive * 5) / (200)).toFixed(1)}</p>
+								<p className="totalNegative">{parseFloat(Math.abs((totalNegative * 5) / (200))).toFixed(1)}</p>
 								<p className="comments">{commentDetails}</p>
 								<TextField className="text" type='text' placeholder='Submit your review!' onInput={e => this.setState({ userComment: e.target.value })} />
 								<button className="buy button"><span>Submit</span></button>
@@ -505,10 +498,10 @@ class App extends Component {
 
 						<form className="form" onSubmit={(e) => this.submitFile(e)}>
 							<h3>Select your file</h3>
-							<label className="upload-label">Select Book: 
-								<input type='file' onChange={this.getFile} accept='application/pdf'/>
+							<label className="upload-label">Select Book:
+								<input type='file' onChange={this.getFile} accept='application/pdf' />
 							</label>
-							<label>Select Book Image: 
+							<label>Select Book Image:
 								<input type='file' onChange={this.getImage} accept='image/*' />
 							</label>
 							<br></br>
@@ -518,15 +511,15 @@ class App extends Component {
 							<TextField margin="normal" variant="outlined" label="Rent Price" type='text' onInput={e => this.setState({ rent: e.target.value })} />
 							<TextField margin="normal" variant="outlined" label="Rent Duration" placeholder="In Days" type='text' onInput={e => this.setState({ rentDays: e.target.value })} />
 							<button id='upload' className="button"><span>Upload</span></button><br></br>
-						
+
 							<div className="hash-div">
 								<strong>IPFS Hash: </strong>
-									<span className="hashLink" onClick={() => this.openModal(this.state.ipfsHash)}>{this.state.ipfsHash}</span>
+								<span className="hashLink" onClick={() => this.openModal(this.state.ipfsHash)}>{this.state.ipfsHash}</span>
 							</div>
 						</form>
 
 						<Modal className="modal" visible={this.state.visible} width="100%" height="100%" effect="fadeInUp" onClickAway={() => this.closeModal()}>
-							<img className="cross" onClick={() =>this.closeModal() } className='cross' src={require('./utils/cross1.png')} />															
+							<img className="cross" onClick={() => this.closeModal()} className='cross' src={require('./utils/cross1.png')} />
 							<iframe height="100%" width="100%" className="preview" src={this.loadHtml()} ></iframe>
 						</Modal>
 
@@ -544,35 +537,35 @@ class App extends Component {
 								{rentList}
 							</Slider>
 						</div>
-						
+
 						<Modal className="modal" visible={this.state.visible} width="100%" height="100%" effect="fadeInUp" onClickAway={() => this.closeModal()}>
-							<img className="cross" onClick={() =>this.closeModal() } className='cross' src={require('./utils/cross1.png')} />															
+							<img className="cross" onClick={() => this.closeModal()} className='cross' src={require('./utils/cross1.png')} />
 							<iframe height="100%" width="100%" className="preview" src={this.loadHtml()} ></iframe>
 						</Modal>
 
 					</TabPanel>
-					
+
 					<TabPanel>
+						<div>
 							<div>
-								<div>
-									<Slider {...settings} >
-										{bookComment}
-									</Slider>
-								</div>
-								<div>
-									<form className="form" onSubmit={this.submitComment}>
-										<p><strong>Book Name: </strong>{this.state.currentBook}</p>
-										<TextField margin="normal" variant="standard" label="Write a review!" className="text" type='text' onInput={e => this.setState({ userComment: e.target.value })} />
-										<button className="buy button"><span>Submit</span></button>
-									</form>
-								</div>
-							</div> 
-							{/* :
+								<Slider {...settings} >
+									{bookComment}
+								</Slider>
+							</div>
+							<div>
+								<form className="form" onSubmit={this.submitComment}>
+									<p><strong>Book Name: </strong>{this.state.currentBook}</p>
+									<TextField margin="normal" variant="standard" label="Write a review!" className="text" type='text' onInput={e => this.setState({ userComment: e.target.value })} />
+									<button className="buy button"><span>Submit</span></button>
+								</form>
+							</div>
+						</div>
+						{/* :
 							<div>
 								<img src={require('./utils/nothing.png')}></img>
 								<p className="empty-heading">Wow! Such empty.</p>
 							</div>	 */}
-						
+
 					</TabPanel>
 
 					<TabPanel className="insights">
@@ -594,13 +587,18 @@ class App extends Component {
 							<div className='insightCard'>
 								{insight}
 							</div>
+							<Modal className="modal" visible={this.state.visibleTimer} width="40%" height="90%" effect="fadeInDown" onClickAway={() => this.closeViewModal()}>
+									<img className="cross" onClick={() => this.closeViewModal()} className='cross' src={require('./utils/cross1.png')} />
+									<p><strong>Book Name: </strong>{this.state.currentBook}</p>
+									<p className="comments">{commentDetails}</p>
+							</Modal>
 						</div>
 					</TabPanel>
 				</Tabs>
-				
+
 
 			</div>
 		);
-	}	
+	}
 }
 export default App;
