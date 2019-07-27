@@ -17,7 +17,7 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { AppBar, Fab } from "@material-ui/core";
 import { View, pdfjs, Document, Page } from 'react-pdf';
-import { display } from "@material-ui/system";
+import WheelReact from 'wheel-react';
 
 
 // var Sentiment = require('sentiment');
@@ -364,7 +364,7 @@ class App extends Component {
 	}
 
 	updatePage() {
-		this.setState({ pageNumber: this.state.pageNumber + 1 })
+		
 	}
 
 	render() {
@@ -380,6 +380,25 @@ class App extends Component {
 		// var hidden = {
 		// 	display: this.state.shown ? "block" : "none"
 		// }
+
+		WheelReact.config({
+			up: () => {
+				if(this.state.pageNumber != this.state.numPages)
+				{
+					this.setState({
+						pageNumber: this.state.pageNumber + 1				  
+					  });
+				}
+			},
+			down: () => {
+				if(this.state.pageNumber != 1)
+				{
+					this.setState({
+					pageNumber: this.state.pageNumber - 1
+				  });
+				}
+			}
+		  });
 
 		var settings = {
 			dots: true,
@@ -579,7 +598,7 @@ class App extends Component {
 
 						<Modal className="modal" visible={this.state.visible} height='100%' width='100%' effect="fadeInUp" onClickAway={() => this.closeModal()}>
 							<img className="cross" onClick={() => this.closeModal()} className='cross' src={require('./utils/cross1.png')} />
-							<div onCopy={this.onCopy} onWheelCapture={this.updatePage} align="center" className="container" >
+							<div onCopy={this.onCopy} {...WheelReact.events} align="center" className="container" >
 								<Document
 									file={"https://ipfs.io/ipfs/" + this.state.ipfsHash}
 									onLoadSuccess={this.onDocumentLoadSuccess}
