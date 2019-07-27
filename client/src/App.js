@@ -16,15 +16,20 @@ import InsightCard from './InsightCard.js'
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { AppBar, Fab } from "@material-ui/core";
+import { View, pdfjs, Document, Page } from 'react-pdf';
+import { display } from "@material-ui/system";
+
 
 // var Sentiment = require('sentiment');
 // const sentiment = new Sentiment();
 
 const vader = require('vader-sentiment');
 
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
+
 class App extends Component {
 
-	state = { bookInsight: [], totalRented: null, totalComments: null, score: [], currentBook: null, commentHash: null, userComment: null, comment: [], url: null, earnings: null, totalSold: null, imageBuffer: null, bookImage: null, exists: false, visibleTimer: false, rentedBooks: [], rentHash: null, rent: null, rentDays: null, booksBoughtName: [], booksBought: [], wallet: null, current: [], visibleBook: false, bookDetails: [], prnt: false, render: true, visible: false, bookName: null, clientName: "utsav", token: 0, ownerName: null, price: 0, contentName: null, viewText: 'Show Preview', showPreview: false, fileMetadata: [], storageValue: [], web3: null, accounts: null, contract: null, buffer: null, ipfsHash: null };
+	state = { numPages: null, pageNumber: 12, bookInsight: [], totalRented: null, totalComments: null, score: [], currentBook: null, commentHash: null, userComment: null, comment: [], url: null, earnings: null, totalSold: null, imageBuffer: null, bookImage: null, exists: false, visibleTimer: false, rentedBooks: [], rentHash: null, rent: null, rentDays: null, booksBoughtName: [], booksBought: [], wallet: null, current: [], visibleBook: false, bookDetails: [], prnt: false, render: true, visible: false, bookName: null, clientName: "utsav", token: 0, ownerName: null, price: 0, contentName: null, viewText: 'Show Preview', showPreview: false, fileMetadata: [], storageValue: [], web3: null, accounts: null, contract: null, buffer: null, ipfsHash: null };
 
 	constructor(props) {
 		super(props)
@@ -41,12 +46,15 @@ class App extends Component {
 		this.viewHandler = this.viewHandler.bind(this);
 		this.viewTimerHandler = this.viewTimerHandler.bind(this);
 		this.submitComment = this.submitComment.bind(this);
+		this.onDocumentLoadSuccess = this.onDocumentLoadSuccess.bind(this);
+		this.updatePage = this.updatePage.bind(this);
+		this.onCopy = this.onCopy.bind(this);
 	}
 
 	componentDidMount = async () => {
 
 		document.oncontextmenu = function () {
-			alert('Right click diabled');
+			alert('Disabled');
 			return false;
 		}
 
@@ -184,11 +192,23 @@ class App extends Component {
 		const { contract, accounts } = this.state;
 		const insights = await contract.methods.getBooksInsight(accounts[0]).call();
 		this.setState({ bookInsight: insights });
-		console.log(this.state.bookInsight)
+		// console.log(this.state.bookInsight)
+	}
+
+	onDocumentLoadSuccess = ({ numPages }) => {
+		this.setState({ pageNumber: 1 })
+		this.setState({ numPages });
+		console.log({ numPages })
 	}
 
 	loadHtml() {
 		return (`https://ipfs.io/ipfs/${this.state.ipfsHash}#toolbar=0`);
+	}
+
+	onCopy(e) {
+		e.preventDefault();
+   		e.nativeEvent.stopImmediatePropagation();
+		alert('Not allowed');
 	}
 
 	openModal(hash) {
@@ -343,7 +363,12 @@ class App extends Component {
 		return (start + "..." + end);
 	}
 
+	updatePage() {
+		this.setState({ pageNumber: this.state.pageNumber + 1 })
+	}
+
 	render() {
+		const { pageNumber, numPages } = this.state;
 		if (!this.state.web3) {
 			return (
 				<div className="metamask">
@@ -520,27 +545,51 @@ class App extends Component {
 
 						<Modal className="modal" visible={this.state.visible} width="100%" height="100%" effect="fadeInUp" onClickAway={() => this.closeModal()}>
 							<img className="cross" onClick={() => this.closeModal()} className='cross' src={require('./utils/cross1.png')} />
-							<iframe height="100%" width="100%" className="preview" src={this.loadHtml()} ></iframe>
+							{/* iframe height="100%" width="100%" className="preview" src={this.loadHtml()} ></iframe> */}
+
 						</Modal>
 
 					</TabPanel>
 
 					<TabPanel>
 						<div>
-							<h3>Books Bought</h3>
-							<Slider {...settings} >
-								{booksList}
-							</Slider>
-							<hr></hr>
-							<h3>Books Rented</h3>
-							<Slider {...settings} >
-								{rentList}
-							</Slider>
+							{
+								(this.state.booksBought.length == 0) ?
+									<p></p>
+									:
+									<div> <h3>Books Bought</h3>
+										<Slider {...settings} >
+											{booksList}
+										</Slider>
+										<hr></hr>
+									</div>
+							}
+
+							{
+								(this.state.rentedBooks.length == 0) ?
+									<p></p>
+									:
+									<div> <h3>Books Rented</h3>
+										<Slider {...settings} >
+											{rentList}
+										</Slider>
+									</div>
+							}
 						</div>
 
-						<Modal className="modal" visible={this.state.visible} width="100%" height="100%" effect="fadeInUp" onClickAway={() => this.closeModal()}>
+						<Modal className="modal" visible={this.state.visible} height='100%' width='100%' effect="fadeInUp" onClickAway={() => this.closeModal()}>
 							<img className="cross" onClick={() => this.closeModal()} className='cross' src={require('./utils/cross1.png')} />
-							<iframe height="100%" width="100%" className="preview" src={this.loadHtml()} ></iframe>
+							<div onCopy={this.onCopy} onWheelCapture={this.updatePage} align="center" className="container" >
+								<Document
+									file={"https://ipfs.io/ipfs/" + this.state.ipfsHash}
+									onLoadSuccess={this.onDocumentLoadSuccess}
+								>
+									{/* <View> */}
+									<Page  className='page' pageNumber={pageNumber} />
+									{/* </View> */}
+								</Document>
+								<p>Page {pageNumber} of {numPages}</p>
+							</div>
 						</Modal>
 
 					</TabPanel>
@@ -588,9 +637,9 @@ class App extends Component {
 								{insight}
 							</div>
 							<Modal className="modal" visible={this.state.visibleTimer} width="40%" height="90%" effect="fadeInDown" onClickAway={() => this.closeViewModal()}>
-									<img className="cross" onClick={() => this.closeViewModal()} className='cross' src={require('./utils/cross1.png')} />
-									<p><strong>Book Name: </strong>{this.state.currentBook}</p>
-									<p className="comments">{commentDetails}</p>
+								<img className="cross" onClick={() => this.closeViewModal()} className='cross' src={require('./utils/cross1.png')} />
+								<p><strong>Book Name: </strong>{this.state.currentBook}</p>
+								<p className="comments">{commentDetails}</p>
 							</Modal>
 						</div>
 					</TabPanel>
