@@ -18,6 +18,7 @@ import "slick-carousel/slick/slick-theme.css";
 import { AppBar, Fab } from "@material-ui/core";
 import { View, pdfjs, Document, Page } from 'react-pdf';
 import WheelReact from 'wheel-react';
+// import 'react-pdf/dist/Page/AnnotationLayer.css';
 
 
 // var Sentiment = require('sentiment');
@@ -29,7 +30,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/$
 
 class App extends Component {
 
-	state = { numPages: null, pageNumber: 12, bookInsight: [], totalRented: null, totalComments: null, score: [], currentBook: null, commentHash: null, userComment: null, comment: [], url: null, earnings: null, totalSold: null, imageBuffer: null, bookImage: null, exists: false, visibleTimer: false, rentedBooks: [], rentHash: null, rent: null, rentDays: null, booksBoughtName: [], booksBought: [], wallet: null, current: [], visibleBook: false, bookDetails: [], prnt: false, render: true, visible: false, bookName: null, clientName: "utsav", token: 0, ownerName: null, price: 0, contentName: null, viewText: 'Show Preview', showPreview: false, fileMetadata: [], storageValue: [], web3: null, accounts: null, contract: null, buffer: null, ipfsHash: null };
+	state = { numPages: null, pageNumber: 12, bookInsight: [], totalRented: null, totalComments: [], score: [], currentBook: null, commentHash: null, userComment: null, comment: [], url: null, earnings: null, totalSold: null, imageBuffer: null, bookImage: null, exists: false, visibleTimer: false, rentedBooks: [], rentHash: null, rent: null, rentDays: null, booksBoughtName: [], booksBought: [], wallet: null, current: [], visibleBook: false, bookDetails: [], prnt: false, render: true, visible: false, bookName: null, clientName: "utsav", token: 0, ownerName: null, price: 0, contentName: null, viewText: 'Show Preview', showPreview: false, fileMetadata: [], storageValue: [], web3: null, accounts: null, contract: null, buffer: null, ipfsHash: null };
 
 	constructor(props) {
 		super(props)
@@ -65,6 +66,7 @@ class App extends Component {
 		setInterval(() => this.getTotal(), 400)
 		setInterval(() => this.getTotalScore(), 400)
 		setInterval(() => this.getBookInsight(), 400)
+		setInterval(() => this.getTotalComments(), 400)
 
 		var self = this;
 		window.addEventListener("keyup", function (e) {
@@ -88,7 +90,7 @@ class App extends Component {
 				OwnershipContract.abi,
 				deployedNetwork && deployedNetwork.address,
 			);
-			instance.address = "0x29278d81143aee04cb46a53fcf6b06c706968f4d";
+			instance.address = "0xf4700a6d70d44b60c214baecfc642d8ffd29ac9a";
 			// Set web3, accounts, and contract to the state, and then proceed with an
 			// example of interacting with the contract's methods.
 			this.setState({ web3, accounts, contract: instance });
@@ -160,7 +162,6 @@ class App extends Component {
 		const { contract, commentHash } = this.state;
 		const response = await contract.methods.searchName(commentHash).call();
 		this.setState({ current: response });
-		console.log("book name: ", this.state.current);
 	};
 
 	getTotal = async () => {
@@ -181,11 +182,11 @@ class App extends Component {
 		this.setState({ score: scoreArray });
 	}
 
-	getTotalComments = async (hash) => {
+	getTotalComments = async () => {
 		const { contract } = this.state;
-		const scoreArray = await contract.methods.getTotalComments(hash).call();
-		this.setState({ totalComments: parseInt(scoreArray._hex) });
-		// console.log(this.state.totalComments)
+		const scoreArray = await contract.methods.getTotalComments().call();
+		this.setState({ totalComments: scoreArray });			
+		console.log(this.state.totalComments)
 	}
 
 	getBookInsight = async () => {
@@ -256,6 +257,7 @@ class App extends Component {
 			this.setState({ buffer: Buffer(reader.result) })
 			console.log('buffer', this.state.buffer)
 			this.setState({ ipfsHash: null })
+
 
 			ipfs.files.add(this.state.buffer, (error, result) => {
 				if (error) {
@@ -440,20 +442,20 @@ class App extends Component {
 		let totNeg = 0;
 		let totPos = 0;
 		var isNegative = false;
+		var count = 0;
 
 		Object.values(this.state.comment).map((key, index) => (
 			isNegative = (key[2] == 'true'),
 			isNegative ? totNeg = totNeg + 1 : totPos = totPos + 1,
 			isNegative ? totalNegative = totalNegative - parseInt(key[1]) : totalPositive = totalPositive + parseInt(key[1])
 		));
-
+		
 		const allBooks = Object.values(this.state.bookDetails).map((key, index) => (
-			// this.getTotalComments(key[3]),
-			// console.log(parseFloat((this.state.score[index]*5)/(200)).toFixed(1)),
+			count = parseFloat((this.state.score[index] / (this.state.totalComments[index] * 200)) * 5 ).toFixed(1),
 			<Card onClick={() => this.bookHandler(key[1], key[3])}
 				days={key[6]} rentPrice={key[5]} imag={key[4]} pname={key[0]} author={key[1]} price={key[2]}
 				rentClick={() => this.rentHandler(key[3])} buyClick={() => this.buyHandler(key[3])}
-				score={parseFloat((this.state.score[index] * 5) / (200)).toFixed(1)}
+				score={count}
 			/>
 		));
 
@@ -554,12 +556,16 @@ class App extends Component {
 							<TextField margin="normal" variant="outlined" label="Purchase Price" type='text' onInput={e => this.setState({ price: e.target.value })} />
 							<TextField margin="normal" variant="outlined" label="Rent Price" type='text' onInput={e => this.setState({ rent: e.target.value })} />
 							<TextField margin="normal" variant="outlined" label="Rent Duration" placeholder="In Days" type='text' onInput={e => this.setState({ rentDays: e.target.value })} />
-							<button id='upload' className="button"><span>Upload</span></button><br></br>
-
-							<div className="hash-div">
+							{
+								(this.state.ipfsHash | this.state.bookImage == null) ?
+								<button disabled id='upload' className="button"><span>Upload</span></button>
+								:
+								<button id='upload' className="button"><span>Upload</span></button>
+							}
+							{/* <div className="hash-div">
 								<strong>IPFS Hash: </strong>
 								<span className="hashLink" onClick={() => this.openModal(this.state.ipfsHash)}>{this.state.ipfsHash}</span>
-							</div>
+							</div> */}
 						</form>
 
 						<Modal className="modal" visible={this.state.visible} width="100%" height="100%" effect="fadeInUp" onClickAway={() => this.closeModal()}>
@@ -599,15 +605,15 @@ class App extends Component {
 						<Modal className="modal" visible={this.state.visible} height='100%' width='100%' effect="fadeInUp" onClickAway={() => this.closeModal()}>
 							<img className="cross" onClick={() => this.closeModal()} className='cross' src={require('./utils/cross1.png')} />
 							<div onCopy={this.onCopy} {...WheelReact.events} align="center" className="container" >
+							<p>Page <strong>{pageNumber}</strong> of {numPages}</p>
 								<Document
 									file={"https://ipfs.io/ipfs/" + this.state.ipfsHash}
 									onLoadSuccess={this.onDocumentLoadSuccess}
 								>
 									{/* <View> */}
-									<Page  className='page' pageNumber={pageNumber} />
+									<Page height='300' width='500' renderMode='png' renderTextLayer='false' className='page' pageNumber={pageNumber} />
 									{/* </View> */}
 								</Document>
-								<p>Page {pageNumber} of {numPages}</p>
 							</div>
 						</Modal>
 

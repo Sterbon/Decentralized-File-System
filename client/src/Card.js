@@ -15,7 +15,7 @@ class Card extends Component {
                             <img onClick={this.props.onClick} src={require('./utils/review.png')} />    
                         </Tooltip>
                         <Tooltip placement="left-start" title="Book Rating">
-                            <Rating className='score' name="half-rating" value={this.props.score} precision={0.5} readOnly />
+                            <Rating className='score' name="half-rating" value={this.props.score} precision={0.1} readOnly />
                         </Tooltip>
                     </div>
 
